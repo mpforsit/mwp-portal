@@ -68,3 +68,38 @@ Tabellen im Schema `cms` an).
 **Nächster Schritt:** 0.3 (robots.txt, llms.txt, check-crawlers.sh)
 oder 0.4 (CI-Basis); 0.3 setzt keine DNS-Arbeiten für die Dateien
 voraus, nur für die Verifikation.
+
+## 2026-07-10 — Schritt 0.3: Crawler-Politik
+
+**Was:** `apps/web/public/robots.txt` (Allowlist: GPTBot,
+OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, Claude-User,
+PerplexityBot, Perplexity-User, Google-Extended, DuckAssistBot,
+MistralAI-User; Disallow: Bytespider, ImagesiftBot; Sitemap-Verweis),
+`apps/web/public/llms.txt` (Portalbeschreibung, drei Bereiche),
+`scripts/check-crawlers.sh` (curl je Crawler-UA, Status + erste Bytes,
+Exit ≠ 0 bei Nicht-200).
+**Begründung:** Schritt 0.3 des Plans; Crawler-Politik "alles erlauben"
+aus strategie-kontext.md §5.
+**Verifikation:** Gegen lokalen Astro-Dev-Server: alle zwölf
+User-Agents 200; robots.txt/llms.txt werden ausgeliefert.
+**Vorbehalte:** Sitemap-URL enthält Platzhalter `PORTAL-DOMAIN.de` —
+nach Domain-Entscheidung/DNS-Umstellung ersetzen (TODO im File);
+llms.txt nennt noch keinen Portalnamen (Naming offen). Manuell offen:
+DNS/Cloudflare-Prüfung ("Block AI bots" AUS) und check-crawlers.sh
+gegen Staging.
+
+## 2026-07-10 — Schritt 0.4: CI-Basis
+
+**Was:** `.github/workflows/ci.yml`: Job `check` (pnpm install
+--frozen-lockfile, `pnpm -r typecheck`, `lint`, `test`) bei jedem PR
+und Push auf main; Job `deploy-staging` (nur main): POST auf
+Coolify-Webhook (Secret `COOLIFY_DEPLOY_WEBHOOK`) + Smoke-Test, der
+bis zu 5 Minuten auf HTTP 200 der Staging-Startseite pollt (Variable
+`STAGING_URL`). apps/api-Testskript auf `--passWithNoTests` gestellt,
+damit CI vor den ersten Tests nicht rot ist.
+**Verifikation:** YAML geparst; alle drei Check-Kommandos lokal grün.
+Der Workflow selbst läuft erst mit einem PR/Push auf GitHub —
+Secrets/Variablen (COOLIFY_DEPLOY_WEBHOOK, STAGING_URL) müssen im Repo
+konfiguriert werden, sobald Coolify steht.
+**Nächster Schritt:** Phase 1, Schritt 1.1 (Payload-Collections mit
+Review-Workflow + Integrationstests).
