@@ -6,6 +6,7 @@ import {
   articleNodes,
   buildGraph,
   medicPersonNodes,
+  podcastEpisodeNodes,
   siteNodes,
   teamPersonNodes,
 } from '../src/lib/jsonld'
@@ -266,6 +267,46 @@ describe('Person-Seiten (Template 2.7)', () => {
     )
     expect(validate(personSchema, person)).toEqual([])
     expect(person?.affiliation).toEqual({ '@id': `${siteUrl}/#org` })
+  })
+
+  it('PodcastEpisode erfüllt Template 2.5', () => {
+    const episodeSchema: JsonSchema = {
+      type: 'object',
+      required: ['name', 'episodeNumber', 'datePublished', 'partOfSeries'],
+      properties: {
+        episodeNumber: { type: 'number' },
+        partOfSeries: {
+          type: 'object',
+          required: ['@type', 'name', 'url'],
+          properties: { '@type': { const: 'PodcastSeries' } },
+        },
+        associatedMedia: {
+          type: 'object',
+          required: ['@type', 'contentUrl'],
+          properties: { '@type': { const: 'AudioObject' } },
+        },
+        transcript: { type: 'string' },
+      },
+    }
+    const [node] = podcastEpisodeNodes(
+      {
+        title: 'Was ist dran an Vitamin D?',
+        episodeNumber: 1,
+        publishDate: '2026-06-15T06:00:00.000Z',
+        audioUrl: 'https://cdn.podigee.example/folge-1.mp3',
+        transcript: [
+          { speaker: 'MATTHIAS', text: 'Erster Satz.' },
+          { speaker: 'RUTH', text: 'Zweiter Satz.' },
+        ],
+      },
+      'Was ist dran an …?',
+      siteUrl,
+    )
+    expect(validate(episodeSchema, node)).toEqual([])
+    expect(node?.datePublished).toBe('2026-06-15')
+    expect(node?.transcript).toBe(
+      'MATTHIAS: Erster Satz.\nRUTH: Zweiter Satz.',
+    )
   })
 
   it('Artikel-Graph verlinkt Autor- und Reviewer-URL, wenn Slugs existieren', () => {

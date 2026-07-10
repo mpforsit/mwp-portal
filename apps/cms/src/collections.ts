@@ -450,6 +450,23 @@ export const PodcastEpisodes: CollectionConfig = {
     { name: 'publishDate', type: 'date', required: true },
     { name: 'showNotes', type: 'richText' },
     {
+      // Volltranskript mit Sprecher-Labels (Umsetzungsplan 1.6):
+      // steht vollständig im Initial-HTML und speist das
+      // transcript-Property im PodcastEpisode-JSON-LD (Template 2.5)
+      name: 'transcript',
+      type: 'array',
+      fields: [
+        { name: 'speaker', type: 'text', required: true },
+        { name: 'text', type: 'textarea', required: true },
+      ],
+    },
+    {
+      // Direkte Audio-URL (Podigee-CDN) für associatedMedia im JSON-LD;
+      // Ergänzung zum Referenz-Artefakt, siehe AGENT_LOG 1.6
+      name: 'audioUrl',
+      type: 'text',
+    },
+    {
       name: 'relatedArticles',
       type: 'relationship',
       relationTo: 'articles',

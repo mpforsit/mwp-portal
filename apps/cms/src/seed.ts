@@ -340,6 +340,46 @@ const run = async (): Promise<void> => {
     console.log(`angelegt: Artikel "${publishedSlug}" (publiziert)`)
   }
 
+  // Beispiel-Podcast-Episode, verknüpft mit dem publizierten Artikel
+  const existingEpisode = await payload.find({
+    collection: 'podcast-episodes',
+    where: { episodeNumber: { equals: 1 } },
+  })
+  if (!existingEpisode.docs[0]) {
+    const published = await payload.find({
+      collection: 'articles',
+      where: { slug: { equals: publishedSlug } },
+    })
+    await payload.create({
+      collection: 'podcast-episodes',
+      data: {
+        title: 'Was ist dran an Vitamin D?',
+        episodeNumber: 1,
+        podigeeEpisodeId: 'platzhalter-episode-1',
+        publishDate: '2026-06-15T06:00:00.000Z',
+        showNotes: richText([
+          paragraph(
+            'Platzhalter-Shownotes: Worum es in der Folge geht, mit den ' +
+              'wichtigsten Zahlen und dem Verweis auf den Wissensartikel.',
+          ),
+        ]),
+        transcript: [
+          {
+            speaker: 'MATTHIAS',
+            text: 'Platzhalter-Transkript: Heute schauen wir uns an, was die Studienlage zu Vitamin D hergibt.',
+          },
+          {
+            speaker: 'RUTH',
+            text: 'Und wie immer endet das Thema in einer Messgröße — beim 25(OH)D-Wert.',
+          },
+        ],
+        relatedArticles: published.docs[0] ? [published.docs[0].id] : [],
+        category: vitaminD.id,
+      },
+    })
+    console.log('angelegt: Podcast-Episode 1')
+  }
+
   console.log('Seed abgeschlossen.')
   process.exit(0)
 }

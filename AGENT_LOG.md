@@ -290,3 +290,35 @@ für Prod gehört das Media-Verzeichnis hinter dieselbe Domain/CDN
 (Coolify-Setup-Thema). Kein Team-Index (/team/) — Plan verlangt nur
 die Beirats-Übersicht.
 **Nächster Schritt:** 1.6 Podcast-Episodenseiten.
+
+## 2026-07-10 — Schritt 1.6: Podcast-Episodenseiten
+
+**Was:**
+- CMS: PodcastEpisodes + `transcript` (Array {speaker, text}, laut
+  Plan) und `audioUrl` (optional, für associatedMedia im JSON-LD;
+  Ergänzung zum Referenz-Artefakt). Seed legt Folge 1 mit Transkript
+  und Verknüpfung zum publizierten Artikel an.
+- Web: `/podcast/` (Episodenliste + Abo-Links Spotify/Apple/RSS —
+  Platzhalter-URLs, TODO in site.ts) und `/podcast/[episode]/`
+  (Route = Folgennummer): PodigeePlayer-Komponente lädt das iframe
+  erst nach Klick — vor der Interaktion kein Request/Cookie an
+  Podigee, Embed-URL nur als data-Attribut, noscript-Fallback-Link;
+  Shownotes aus RichText; verknüpfte Artikel als Kartenliste;
+  Transkript als <details> aufklappbar, aber vollständig im
+  Initial-HTML mit Sprecher-Labels (MATTHIAS:/RUTH:).
+- JSON-LD: `podcastEpisodeNodes` nach Template 2.5 (PodcastEpisode,
+  partOfSeries "Was ist dran an …?", AudioObject bei audioUrl,
+  transcript als Volltext mit Sprecher-Labels).
+- PODIGEE_BASE_URL als Env (Platzhalter bis Podigee-Account steht).
+
+**Verifikation:** Build gegen CMS: /podcast/ und /podcast/1/ gebaut;
+Transkript im Initial-HTML in <details>; kein <iframe> vor
+Interaktion; JSON-LD vollständig; Artikel-Verknüpfung und Abo-Links
+gerendert. Tests 16/16 (neu: Episode-Schema 2.5 inkl. Transkript-
+Serialisierung), CMS 7/7, Lint/Typecheck grün.
+**Vorbehalte:** Erste Seite mit JS (Click-to-Load, ~10 Zeilen inline —
+bewusste Ausnahme für Datenschutz, Content bleibt komplett im HTML).
+Abo-Links und PODIGEE_BASE_URL sind Platzhalter bis zum
+Podcast-Setup. /podcast/ hängt noch nicht in der Hauptnavigation
+(Plan definiert die Nav mit den drei Zonen; ggf. bei Launch-Politur).
+**Nächster Schritt:** 1.7 laut Umsetzungsplan.

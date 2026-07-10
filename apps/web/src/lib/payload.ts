@@ -1,9 +1,15 @@
 // Build-Time-Anbindung an die Payload-REST-API (Schritte 1.3/1.5).
 // Typen kommen aus den generierten Payload-Typen des CMS —
 // keine parallelen Definitionen (CLAUDE.md).
-import type { Article, Media, Medic, User } from '../../../cms/src/payload-types'
+import type {
+  Article,
+  Media,
+  Medic,
+  PodcastEpisode,
+  User,
+} from '../../../cms/src/payload-types'
 
-export type { Article, Media, Medic, User }
+export type { Article, Media, Medic, PodcastEpisode, User }
 
 const apiUrl = import.meta.env.PAYLOAD_API_URL as string | undefined
 // Build authentifiziert sich per API-Key eines Service-Users: nötig,
@@ -63,6 +69,11 @@ export const fetchArticles = async (): Promise<Article[]> => {
 }
 
 export const fetchMedics = async (): Promise<Medic[]> => fetchAll<Medic>('medics')
+
+export const fetchEpisodes = async (): Promise<PodcastEpisode[]> => {
+  const episodes = await fetchAll<PodcastEpisode>('podcast-episodes')
+  return episodes.sort((a, b) => b.episodeNumber - a.episodeNumber)
+}
 
 // Nur Accounts mit Slug haben eine öffentliche Team-Seite; die
 // Users-Collection ist zugriffsgeschützt — ohne Build-Token leer.

@@ -376,3 +376,60 @@ th {
   font-size: var(--text-base);
   margin: 0 0 var(--space-3);
 }
+
+/* --- Podcast: Player-Platzhalter & Transkript --------------------------- */
+
+.player {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+  margin-block: var(--space-5);
+}
+
+.player__note {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-3);
+}
+
+.player__load {
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-surface);
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.player__load:hover {
+  background: var(--color-accent-strong);
+}
+
+.player__frame {
+  width: 100%;
+  min-height: 200px;
+  border: none;
+}
+
+.transcript {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+}
+
+.transcript__toggle {
+  cursor: pointer;
+  font-weight: 600;
+  padding: var(--space-3) var(--space-4);
+}
+
+.transcript__body {
+  padding: 0 var(--space-4) var(--space-3);
+}
+
+.transcript__speaker {
+  color: var(--color-accent-strong);
+}

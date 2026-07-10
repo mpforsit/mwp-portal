@@ -329,6 +329,14 @@ export interface PodcastEpisode {
     };
     [k: string]: unknown;
   } | null;
+  transcript?:
+    | {
+        speaker: string;
+        text: string;
+        id?: string | null;
+      }[]
+    | null;
+  audioUrl?: string | null;
   relatedArticles?: (number | Article)[] | null;
   category?: (number | null) | Category;
   updatedAt: string;
@@ -581,6 +589,14 @@ export interface PodcastEpisodesSelect<T extends boolean = true> {
   podigeeEpisodeId?: T;
   publishDate?: T;
   showNotes?: T;
+  transcript?:
+    | T
+    | {
+        speaker?: T;
+        text?: T;
+        id?: T;
+      };
+  audioUrl?: T;
   relatedArticles?: T;
   category?: T;
   updatedAt?: T;

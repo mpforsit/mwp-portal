@@ -1,0 +1,51 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { fetchEpisodes, formatDate } from '../../lib/payload'
+import { PODCAST_SERIES_NAME, PODCAST_SUBSCRIBE_LINKS } from '../../lib/site'
+
+const episodes = await fetchEpisodes()
+---
+
+<BaseLayout
+  title={`${PODCAST_SERIES_NAME} — der Podcast`}
+  description="Der Podcast prüft evidenzbasiert, welche Maßnahmen für Gesundheit und Langlebigkeit sinnvoll sind — alle Folgen mit Shownotes und Transkript."
+>
+  <h1>{PODCAST_SERIES_NAME}</h1>
+  <p>
+    Der Podcast prüft anhand der Studienlage, was an Gesundheits- und
+    Longevity-Maßnahmen dran ist — und woran sich ihre Wirkung messen
+    lässt. Jede Folge hat hier Shownotes, verknüpfte Artikel und ein
+    vollständiges Transkript.
+  </p>
+  <p>
+    Abonnieren:
+    {
+      PODCAST_SUBSCRIBE_LINKS.map((link, i) => (
+        <>
+          {i > 0 && ' · '}
+          <a href={link.href} rel="noopener">
+            {link.label}
+          </a>
+        </>
+      ))
+    }
+  </p>
+  {
+    episodes.length === 0 ? (
+      <p>Die ersten Folgen erscheinen in Kürze.</p>
+    ) : (
+      <ul class="card-list">
+        {episodes.map((episode) => (
+          <li class="card">
+            <h2 class="card__title">
+              <a href={`/podcast/${episode.episodeNumber}/`}>
+                Folge {episode.episodeNumber}: {episode.title}
+              </a>
+            </h2>
+            <p>{formatDate(episode.publishDate)}</p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</BaseLayout>

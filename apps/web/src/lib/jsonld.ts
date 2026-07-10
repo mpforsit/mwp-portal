@@ -1,7 +1,13 @@
 // JSON-LD-Graphen nach docs/artefakte/redaktions-template-geo-checkliste.md
 // Teil 2. Reine Funktionen (Build-Time), gerendert über JsonLd.astro.
 // Alle Werte kommen aus CMS-Feldern — nie aus dem Build-Zeitpunkt.
-import { formatMedicName, type Article, type Medic, type User } from './payload'
+import {
+  formatMedicName,
+  type Article,
+  type Medic,
+  type PodcastEpisode,
+  type User,
+} from './payload'
 
 export type JsonLdNode = Record<string, unknown>
 
@@ -180,6 +186,42 @@ export const teamPersonNodes = (
       ...(user.qualification ? { jobTitle: user.qualification } : {}),
       url: pageUrl,
       affiliation: { '@id': `${siteUrl}/#org` },
+    },
+  ]
+}
+
+// --- Podcast-Episode (Template 2.5) ----------------------------------
+export const podcastEpisodeNodes = (
+  episode: Pick<
+    PodcastEpisode,
+    'title' | 'episodeNumber' | 'publishDate' | 'audioUrl' | 'transcript'
+  >,
+  seriesName: string,
+  siteUrl: string,
+): JsonLdNode[] => {
+  const transcriptText = (episode.transcript ?? [])
+    .map((entry) => `${entry.speaker}: ${entry.text}`)
+    .join('\n')
+  return [
+    {
+      '@type': 'PodcastEpisode',
+      name: episode.title,
+      episodeNumber: episode.episodeNumber,
+      datePublished: dateOnly(episode.publishDate),
+      partOfSeries: {
+        '@type': 'PodcastSeries',
+        name: seriesName,
+        url: `${siteUrl}/podcast/`,
+      },
+      ...(episode.audioUrl
+        ? {
+            associatedMedia: {
+              '@type': 'AudioObject',
+              contentUrl: episode.audioUrl,
+            },
+          }
+        : {}),
+      ...(transcriptText ? { transcript: transcriptText } : {}),
     },
   ]
 }
