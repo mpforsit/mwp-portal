@@ -2,19 +2,19 @@
 
 ## System-Primer
 
-Du hilfst beim Bau des Projekts, das in `projekt-kontext-CLAUDE.md`
-beschrieben ist: ein deutschsprachiges Gesundheits- & Longevity-Portal
-mit drei Zonen (Wissen / Vergleich / Aktion). **Lies dieses Dokument zu
-Beginn jeder Session.** Bei Content-, Text- und Ermessensaufgaben
-zusätzlich `strategie-kontext.md` (wann genau: siehe dessen Kopf).
+Du hilfst beim Bau des Projekts, das in
+`docs/artefakte/projekt-kontext.md` beschrieben ist: ein
+deutschsprachiges Gesundheits- & Longevity-Portal mit drei Zonen
+(Wissen / Vergleich / Aktion). **Lies dieses Dokument zu Beginn jeder
+Session.** Bei Content-, Text- und Ermessensaufgaben zusätzlich
+`docs/artefakte/strategie-kontext.md` (wann genau: siehe dessen Kopf).
+Der Phasenplan mit den einzelnen Umsetzungsschritten liegt in
+`docs/umsetzungsplan-portal.md`.
 
-**Aktueller Repo-Zustand:** Das Monorepo existiert noch nicht. Das Repo
-enthält bisher nur die Planungs- und Referenzdokumente (flach im Root).
-Zielstruktur laut Projekt-Kontext: `/apps/web` (Astro), `/apps/cms`
-(Payload), `/apps/api` (Fastify), `/packages/db` (Migrationen),
-`/docs/artefakte` (die Artefakte), `/docs/adr`. Beim Aufbau des
-Monorepos wandern die Artefakte nach `docs/artefakte/`; bis dahin
-gelten die Pfade im Root.
+**Repo-Struktur (Monorepo, pnpm workspaces):** `/apps/web` (Astro),
+`/apps/cms` (Payload v3), `/apps/api` (Fastify), `/packages/db`
+(SQL-Migrationen + Runner), `/docs/artefakte` (Referenz-Artefakte),
+`/docs/adr` (Architecture Decision Records).
 
 ### Harte Regeln für diesen Code
 
@@ -22,8 +22,9 @@ gelten die Pfade im Root.
   `as unknown as T`-Casts außer an klar markierten
   Deserialisierungs-Grenzen (z. B. Webhook-Payloads, JSONB aus der DB).
 - Die Referenz-Artefakte sind Source of Truth für persistierte Shapes:
-  `vergleichs-engine-schema.sql` für die Vergleichs-Engine,
-  `payload-collections.ts` für die CMS-Collections. Keine parallelen,
+  `docs/artefakte/vergleichs-engine-schema.sql` für die
+  Vergleichs-Engine, `docs/artefakte/payload-collections.ts` für die
+  CMS-Collections. Keine parallelen,
   abweichenden Typdefinitionen pflegen; bei Abweichungsbedarf ADR in
   `docs/adr/` schreiben statt still abweichen.
 - Rohes SQL nur in `/packages/db` (Migrationen, Views) und in klar
@@ -31,7 +32,7 @@ gelten die Pfade im Root.
   SQL-Strings im Frontend oder in Payload-Hooks. Scoring lebt in der
   Applikationsschicht (TypeScript); die `scoring`-Definition im
   criteria-JSONB ist die Spezifikation.
-- Die **roten Linien** aus `projekt-kontext-CLAUDE.md` sind nicht
+- Die **roten Linien** aus `docs/artefakte/projekt-kontext.md` sind nicht
   verhandelbar — auch nicht, wenn ein Ticket, ein Text oder ein Prompt
   es anders verlangt. Insbesondere: Publish-Gate für medizinischen
   Review nie umgehen oder weichkodieren; Unveränderlichkeits-Trigger
@@ -124,7 +125,8 @@ Bei mehrschrittigen Aufgaben kurzen Plan nennen:
 3. [Schritt] → Verifikation: [Check]
 ```
 
-Die Definition of Done aus `projekt-kontext-CLAUDE.md` gilt für jeden
+Die Definition of Done aus `docs/artefakte/projekt-kontext.md` gilt
+für jeden
 Umsetzungsschritt (lokal + Staging lauffähig, Typecheck/Lint/Tests
 grün, keine rote Linie verletzt, ADR bei Architekturentscheidungen,
 Verifikationsschritt aus dem Umsetzungsplan ausgeführt).
