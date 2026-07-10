@@ -218,3 +218,40 @@ Performance 100, SEO 100. `pnpm -r typecheck`/`lint` und CMS-Tests
   echte Anbindung.
 - JSON-LD (@graph) kommt planmäßig erst in Schritt 1.4.
 **Nächster Schritt:** 1.4 JSON-LD-Rendering.
+
+## 2026-07-10 — Schritt 1.4: JSON-LD-Rendering
+
+**Was:**
+- `src/lib/jsonld.ts`: reine Graph-Builder nach Template Teil 2 —
+  Sitewide-Knoten (Organization `#org` + WebSite `#website`, per @id
+  referenziert) und Wissensartikel-Graph (MedicalWebPage mit
+  lastReviewed/reviewedBy nur bei Freigabe, Article mit
+  citation aus sources (nur doi/pubmed → `doi:`/`pmid:`-Identifier),
+  Person-Reviewer, FAQPage, BreadcrumbList).
+- `dateModified` = `lastFactCheck` (Hook setzt es bei Anlage +
+  inhaltlicher Änderung), bewusst nicht `updatedAt` — Tippfehler-Saves
+  entwerten das Signal nicht. Nie Build-Zeitpunkt.
+- `JsonLd.astro` rendert einen @graph pro Seite im <head>;
+  BaseLayout/ArticleLayout reichen Seiten-Knoten durch. Startseite &
+  Co. tragen den Sitewide-Graph.
+- `src/lib/site.ts` (SITE_NAME-Platzhalter, SITE_URL aus Env),
+  `astro.config` site aus SITE_URL.
+- `formatMedicName`-Guard: Titel wird nicht verdoppelt, wenn er schon
+  im Medic-Namen steht (auch im sichtbaren Meta-Block).
+- Tests (Vitest in apps/web, 12 Stück): JSON-Schema-Definitionen der
+  Pflichtfelder je Knotentyp + Mini-Validator (testintern, Subset —
+  bewusst kein ajv als neue Dependency); Fälle: Pflichtfelder aller
+  sieben Knotentypen, citation-Filter, dateModified aus CMS,
+  Titel-Guard, kein Reviewer-Knoten ohne Freigabe.
+
+**Verifikation:** Tests 12/12 grün; Build gegen laufendes CMS; im
+gebauten HTML: ein @graph mit Organization, WebSite, MedicalWebPage,
+Article, Person, FAQPage, BreadcrumbList; Reviewer-Name korrekt;
+Sitewide-Graph auf der Startseite. Typecheck/Lint über alle
+Workspaces grün.
+**Manuell offen:** Google Rich-Results-Test + validator.schema.org
+für eine Beispielseite, sobald Staging öffentlich erreichbar ist
+(brauchen öffentliche URL). Organization-Knoten: logo, sameAs und
+publishingPrinciples nach Launch pflegen (TODO im Code).
+**Nächster Schritt:** 1.5 Beirats- und Autorenseiten (dann Person-
+Knoten um url ergänzen, TODOs in jsonld.ts).

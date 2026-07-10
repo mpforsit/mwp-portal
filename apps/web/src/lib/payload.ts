@@ -58,6 +58,16 @@ export const fetchArticles = async (): Promise<Article[]> => {
   return articles
 }
 
+// Titel nur voranstellen, wenn er nicht schon im Namen steht
+// (Redaktionsdaten enthalten beides in freier Form)
+export const formatMedicName = (medic: {
+  title?: string | null
+  name: string
+}): string =>
+  medic.title && !medic.name.startsWith(medic.title)
+    ? `${medic.title} ${medic.name}`
+    : medic.name
+
 export const formatDate = (iso: string | null | undefined): string =>
   iso
     ? new Intl.DateTimeFormat('de-DE', { dateStyle: 'long' }).format(

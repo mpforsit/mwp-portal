@@ -1,15 +1,18 @@
 ---
+import JsonLd from '../components/JsonLd.astro'
 import SiteFooter from '../components/SiteFooter.astro'
 import SiteHeader from '../components/SiteHeader.astro'
+import type { JsonLdNode } from '../lib/jsonld'
 import '../styles/global.css'
 
 interface Props {
   title: string
   description: string
   activeZone?: 'wissen' | 'vergleich' | 'messen'
+  jsonLdNodes?: JsonLdNode[]
 }
 
-const { title, description, activeZone } = Astro.props
+const { title, description, activeZone, jsonLdNodes } = Astro.props
 ---
 
 <!doctype html>
@@ -19,6 +22,7 @@ const { title, description, activeZone } = Astro.props
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
     <title>{title}</title>
+    <JsonLd nodes={jsonLdNodes} />
   </head>
   <body>
     <SiteHeader activeZone={activeZone} />

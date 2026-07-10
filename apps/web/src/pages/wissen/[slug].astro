@@ -4,8 +4,15 @@
 // Kernaussage-Box (Layout), TOC aus H2s, RichText mit echten Tabellen,
 // FAQ, Messgrößen-Block, nummerierte Quellen, sichtbarer Meta-Block.
 import ArticleLayout from '../../layouts/ArticleLayout.astro'
+import { articleNodes } from '../../lib/jsonld'
 import { extractToc, renderRichText } from '../../lib/lexical'
-import { fetchArticles, formatDate, type Article } from '../../lib/payload'
+import {
+  fetchArticles,
+  formatDate,
+  formatMedicName,
+  type Article,
+} from '../../lib/payload'
+import { SITE_URL } from '../../lib/site'
 
 export async function getStaticPaths() {
   const articles = await fetchArticles()
@@ -48,6 +55,7 @@ const sourceHref = (s: NonNullable<Article['sources']>[number]): string | null =
   evidenzgrad={article.evidenzgrad}
   stand={formatDate(article.lastFactCheck)}
   activeZone="wissen"
+  jsonLdNodes={articleNodes(article, SITE_URL)}
 >
   {
     toc.length > 1 && (
@@ -151,8 +159,7 @@ const sourceHref = (s: NonNullable<Article['sources']>[number]): string | null =
           <>
             <dt>Medizinisch geprüft</dt>
             <dd>
-              von {reviewedBy.title ? `${reviewedBy.title} ` : ''}
-              {reviewedBy.name}, {reviewedBy.specialty} am{' '}
+              von {formatMedicName(reviewedBy)}, {reviewedBy.specialty} am{' '}
               {formatDate(article.review?.reviewDate)}
             </dd>
           </>

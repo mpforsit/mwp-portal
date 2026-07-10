@@ -1,0 +1,19 @@
+---
+// Rendert einen @graph pro Seite (Template Teil 2): Sitewide-Knoten
+// plus die übergebenen Seiten-Knoten.
+import { buildGraph, siteNodes, type JsonLdNode } from '../lib/jsonld'
+import { SITE_NAME, SITE_URL } from '../lib/site'
+
+interface Props {
+  nodes?: JsonLdNode[]
+}
+
+const { nodes = [] } = Astro.props
+const graph = buildGraph([...siteNodes(SITE_URL, SITE_NAME), ...nodes])
+---
+
+<script
+  type="application/ld+json"
+  set:html={JSON.stringify(graph)}
+  is:inline
+/>
