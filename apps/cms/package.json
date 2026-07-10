@@ -9,7 +9,9 @@
     "generate:types": "payload generate:types",
     "generate:importmap": "payload generate:importmap",
     "typecheck": "tsc --noEmit",
-    "lint": "eslint src"
+    "lint": "eslint src",
+    "test": "vitest run",
+    "seed": "tsx --env-file=.env src/seed.ts"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "^3.44.0",
@@ -24,8 +26,12 @@
   },
   "devDependencies": {
     "@types/node": "^22.15.0",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
-    "typescript": "^5.8.0"
+    "pg": "^8.22.0",
+    "tsx": "^4.23.0",
+    "typescript": "^5.8.0",
+    "vitest": "^3.2.7"
   }
 }

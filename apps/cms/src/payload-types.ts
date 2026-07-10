@@ -68,6 +68,11 @@ export interface Config {
   blocks: {};
   collections: {
     users: User;
+    media: Media;
+    medics: Medic;
+    categories: Category;
+    articles: Article;
+    'podcast-episodes': PodcastEpisode;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -76,6 +81,11 @@ export interface Config {
   collectionsJoins: {};
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
+    media: MediaSelect<false> | MediaSelect<true>;
+    medics: MedicsSelect<false> | MedicsSelect<true>;
+    categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    articles: ArticlesSelect<false> | ArticlesSelect<true>;
+    'podcast-episodes': PodcastEpisodesSelect<false> | PodcastEpisodesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -121,6 +131,8 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  role: 'admin' | 'redaktion' | 'arzt';
+  medicProfile?: (number | null) | Medic;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -139,6 +151,172 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "medics".
+ */
+export interface Medic {
+  id: number;
+  name: string;
+  /**
+   * z. B. Dr. med.
+   */
+  title?: string | null;
+  /**
+   * Facharztbezeichnung, z. B. Laboratoriumsmedizin
+   */
+  specialty: string;
+  photo?: (number | null) | Media;
+  bio?: string | null;
+  practiceUrl?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media".
+ */
+export interface Media {
+  id: number;
+  alt: string;
+  updatedAt: string;
+  createdAt: string;
+  url?: string | null;
+  thumbnailURL?: string | null;
+  filename?: string | null;
+  mimeType?: string | null;
+  filesize?: number | null;
+  width?: number | null;
+  height?: number | null;
+  focalX?: number | null;
+  focalY?: number | null;
+  sizes?: {
+    thumbnail?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+    content?: {
+      url?: string | null;
+      width?: number | null;
+      height?: number | null;
+      mimeType?: string | null;
+      filesize?: number | null;
+      filename?: string | null;
+    };
+  };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories".
+ */
+export interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles".
+ */
+export interface Article {
+  id: number;
+  title: string;
+  slug: string;
+  category: number | Category;
+  author: number | User;
+  excerpt?: string | null;
+  kernaussage: string;
+  evidenzgrad: 'hoch' | 'mittel' | 'niedrig' | 'unklar';
+  content: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * 3–6 Einträge; Pflicht für Publish
+   */
+  faq?:
+    | {
+        frage: string;
+        antwort: string;
+        id?: string | null;
+      }[]
+    | null;
+  messgroesse?: {
+    biomarker?: string | null;
+    referenzbereich?: string | null;
+    intervall?: string | null;
+  };
+  sources?:
+    | {
+        citation: string;
+        refType: 'doi' | 'pubmed' | 'url';
+        ref: string;
+        id?: string | null;
+      }[]
+    | null;
+  requiresMedicalReview?: boolean | null;
+  review?: {
+    status?: ('in_arbeit' | 'redaktionell_fertig' | 'medizinisch_geprueft') | null;
+    reviewedBy?: (number | null) | Medic;
+    reviewDate?: string | null;
+    reviewNote?: string | null;
+  };
+  lastFactCheck?: string | null;
+  contentHash?: string | null;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "podcast-episodes".
+ */
+export interface PodcastEpisode {
+  id: number;
+  title: string;
+  episodeNumber: number;
+  /**
+   * ID für Player-Embed
+   */
+  podigeeEpisodeId: string;
+  publishDate: string;
+  showNotes?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  relatedArticles?: (number | Article)[] | null;
+  category?: (number | null) | Category;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -163,10 +341,31 @@ export interface PayloadKv {
  */
 export interface PayloadLockedDocument {
   id: number;
-  document?: {
-    relationTo: 'users';
-    value: number | User;
-  } | null;
+  document?:
+    | ({
+        relationTo: 'users';
+        value: number | User;
+      } | null)
+    | ({
+        relationTo: 'media';
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'medics';
+        value: number | Medic;
+      } | null)
+    | ({
+        relationTo: 'categories';
+        value: number | Category;
+      } | null)
+    | ({
+        relationTo: 'articles';
+        value: number | Article;
+      } | null)
+    | ({
+        relationTo: 'podcast-episodes';
+        value: number | PodcastEpisode;
+      } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
@@ -214,6 +413,8 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  role?: T;
+  medicProfile?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -230,6 +431,137 @@ export interface UsersSelect<T extends boolean = true> {
         createdAt?: T;
         expiresAt?: T;
       };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "media_select".
+ */
+export interface MediaSelect<T extends boolean = true> {
+  alt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  url?: T;
+  thumbnailURL?: T;
+  filename?: T;
+  mimeType?: T;
+  filesize?: T;
+  width?: T;
+  height?: T;
+  focalX?: T;
+  focalY?: T;
+  sizes?:
+    | T
+    | {
+        thumbnail?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+        content?:
+          | T
+          | {
+              url?: T;
+              width?: T;
+              height?: T;
+              mimeType?: T;
+              filesize?: T;
+              filename?: T;
+            };
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "medics_select".
+ */
+export interface MedicsSelect<T extends boolean = true> {
+  name?: T;
+  title?: T;
+  specialty?: T;
+  photo?: T;
+  bio?: T;
+  practiceUrl?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "categories_select".
+ */
+export interface CategoriesSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "articles_select".
+ */
+export interface ArticlesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  category?: T;
+  author?: T;
+  excerpt?: T;
+  kernaussage?: T;
+  evidenzgrad?: T;
+  content?: T;
+  faq?:
+    | T
+    | {
+        frage?: T;
+        antwort?: T;
+        id?: T;
+      };
+  messgroesse?:
+    | T
+    | {
+        biomarker?: T;
+        referenzbereich?: T;
+        intervall?: T;
+      };
+  sources?:
+    | T
+    | {
+        citation?: T;
+        refType?: T;
+        ref?: T;
+        id?: T;
+      };
+  requiresMedicalReview?: T;
+  review?:
+    | T
+    | {
+        status?: T;
+        reviewedBy?: T;
+        reviewDate?: T;
+        reviewNote?: T;
+      };
+  lastFactCheck?: T;
+  contentHash?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "podcast-episodes_select".
+ */
+export interface PodcastEpisodesSelect<T extends boolean = true> {
+  title?: T;
+  episodeNumber?: T;
+  podigeeEpisodeId?: T;
+  publishDate?: T;
+  showNotes?: T;
+  relatedArticles?: T;
+  category?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

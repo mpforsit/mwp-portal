@@ -8,6 +8,21 @@ on:
 jobs:
   check:
     runs-on: ubuntu-latest
+    services:
+      # für die CMS-Integrationstests (Review-Workflow)
+      postgres:
+        image: postgis/postgis:15-3.4
+        env:
+          POSTGRES_USER: portal
+          POSTGRES_PASSWORD: portal
+          POSTGRES_DB: portal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U portal -d portal"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
 

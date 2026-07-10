@@ -3,8 +3,16 @@ import { fileURLToPath } from 'node:url'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload'
+import sharp from 'sharp'
 
-import { Users } from './collections/Users'
+import {
+  Articles,
+  Categories,
+  Media,
+  Medics,
+  PodcastEpisodes,
+  Users,
+} from './collections'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -13,10 +21,9 @@ export default buildConfig({
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
   },
-  // Die vollständigen Collections (Articles, Medics, Review-Workflow)
-  // kommen in Schritt 1.1 aus docs/artefakte/payload-collections.ts.
-  collections: [Users],
+  collections: [Users, Media, Medics, Categories, Articles, PodcastEpisodes],
   editor: lexicalEditor(),
+  sharp,
   secret: process.env.PAYLOAD_SECRET ?? '',
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),

@@ -103,3 +103,44 @@ Secrets/Variablen (COOLIFY_DEPLOY_WEBHOOK, STAGING_URL) müssen im Repo
 konfiguriert werden, sobald Coolify steht.
 **Nächster Schritt:** Phase 1, Schritt 1.1 (Payload-Collections mit
 Review-Workflow + Integrationstests).
+
+## 2026-07-10 — Schritt 1.1: Payload-Collections mit Review-Workflow
+
+**Was:** Referenz-Collections vollständig in `apps/cms` integriert
+(`src/collections.ts`: Users, Media, Medics, Categories, Articles,
+PodcastEpisodes) und gemäß Plan/Redaktions-Template Tab. 1.2 erweitert:
+- Media-Collection (lokales Storage, WebP-Konvertierung + imageSizes
+  via sharp).
+- Articles: `kernaussage` (textarea, required, max 500), `evidenzgrad`
+  (select hoch/mittel/niedrig/unklar), `faq` (array {frage, antwort}),
+  `messgroesse` (group {biomarker, referenzbereich, intervall}),
+  `lastFactCheck` (date, readOnly, per Hook bei Anlage und
+  Content-Änderung gesetzt).
+- contentHash umfasst zusätzlich kernaussage/faq/messgroesse.
+- Publish-Gate verlangt zusätzlich gesetzte Kernaussage und min. 3 FAQ.
+- Seed (`pnpm seed` → tsx): Admin/Redakteur/Arzt+Medic-Profil,
+  2 Kategorien, 1 Draft-Artikel in_arbeit; idempotent.
+- Integrationstests (`pnpm test`, Vitest + Payload Local API, eigene
+  DB `portal_test`, Schema-Reset im globalSetup): die vier geforderten
+  Fälle (a–d) plus Stempel-Unterschieben, FAQ-Gate, Publish-Happy-Path.
+  7/7 grün.
+- CI: Postgres-Service (postgis 15-3.4) im check-Job für die Tests.
+
+**Abweichungen/Erkenntnisse:**
+1. **Bug im Referenz-Artefakt gefunden** (durch Test c): Nach der
+   Review-Invalidierung stellte der nachfolgende "Stempel niemals vom
+   Client"-Zweig `reviewedBy/reviewDate` aus originalDoc wieder her.
+   Fix: `reviewInvalidated`-Flag überspringt den Restore-Zweig.
+   → Artefakt `docs/artefakte/payload-collections.ts` sollte
+   entsprechend nachgezogen werden (Rückmeldung an Maintainer).
+2. contentHash wird über `{ ...originalDoc, ...data }` gebildet, weil
+   Local-API-Updates partiell sein können (Artefakt hashte nur `data`).
+3. `payload run src/seed.ts` schlug im Sandbox-Environment still fehl;
+   Seed-Skript läuft stattdessen über tsx (`--env-file=.env`).
+
+**Verifikation:** `pnpm -r typecheck`, `lint`, `test` grün; Seed
+zweimal gelaufen (idempotent); Admin-UI bootet (200); anonyme
+API-Zugriffe: Draft-Artikel unsichtbar, /api/users verweigert.
+Manuell offen: Durchklicken im Admin-UI mit allen drei Rollen
+(Login-Daten siehe Seed; Passwort `changeme!42`).
+**Nächster Schritt:** 1.2 Astro-Grundgerüst & Designsystem.
