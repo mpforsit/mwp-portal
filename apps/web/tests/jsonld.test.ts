@@ -2,7 +2,13 @@
 // Pflichtfelder aus Template Teil 2 (Umsetzungsplan 1.4).
 import { describe, expect, it } from 'vitest'
 
-import { articleNodes, buildGraph, siteNodes } from '../src/lib/jsonld'
+import {
+  articleNodes,
+  buildGraph,
+  medicPersonNodes,
+  siteNodes,
+  teamPersonNodes,
+} from '../src/lib/jsonld'
 import type { JsonSchema } from './json-schema'
 import { validate } from './json-schema'
 
@@ -219,5 +225,74 @@ describe('JSON-LD (Template Teil 2)', () => {
     const page = unreviewed.find((n) => n['@type'] === 'MedicalWebPage')
     expect(page?.lastReviewed).toBeUndefined()
     expect(page?.reviewedBy).toBeUndefined()
+  })
+})
+
+describe('Person-Seiten (Template 2.7)', () => {
+  const personSchema: JsonSchema = {
+    type: 'object',
+    required: ['@id', 'name', 'jobTitle', 'url'],
+    properties: {
+      sameAs: { type: 'array', minItems: 1 },
+      affiliation: { type: 'object', required: ['@id'] },
+    },
+  }
+
+  it('Beirats-Person erfüllt Pflichtfelder inkl. honorificPrefix/sameAs', () => {
+    const [person] = medicPersonNodes(
+      {
+        name: 'Erika Beispiel',
+        slug: 'erika-beispiel',
+        title: 'Dr. med.',
+        specialty: 'Laboratoriumsmedizin',
+        practiceUrl: 'https://praxis.example',
+      },
+      siteUrl,
+    )
+    expect(validate(personSchema, person)).toEqual([])
+    expect(person?.honorificPrefix).toBe('Dr. med.')
+    expect(person?.url).toBe(`${siteUrl}/beirat/erika-beispiel/`)
+    expect(person?.sameAs).toEqual(['https://praxis.example'])
+  })
+
+  it('Team-Person erfüllt Pflichtfelder und referenziert die Organization', () => {
+    const [person] = teamPersonNodes(
+      {
+        name: 'Rena Redaktion',
+        slug: 'rena-redaktion',
+        qualification: 'Wissenschaftsredakteurin',
+      },
+      siteUrl,
+    )
+    expect(validate(personSchema, person)).toEqual([])
+    expect(person?.affiliation).toEqual({ '@id': `${siteUrl}/#org` })
+  })
+
+  it('Artikel-Graph verlinkt Autor- und Reviewer-URL, wenn Slugs existieren', () => {
+    const nodesWithSlugs = articleNodes(
+      {
+        ...testArticle,
+        author: { ...(testArticle.author as object), slug: 'rena-redaktion' } as never,
+        review: {
+          ...testArticle.review,
+          reviewedBy: {
+            id: 1,
+            name: 'Erika Beispiel',
+            title: 'Dr. med.',
+            specialty: 'Laboratoriumsmedizin',
+            slug: 'erika-beispiel',
+            updatedAt: '',
+            createdAt: '',
+          },
+        },
+      },
+      siteUrl,
+    )
+    const art = nodesWithSlugs.find((n) => n['@type'] === 'Article') as {
+      author: { url?: string }
+    }
+    expect(art.author.url).toBe(`${siteUrl}/team/rena-redaktion/`)
+    const reviewer = nodesWithSlugs.find((n) => n['@type'] === 'Person')
+    expect(reviewer?.url).toBe(`${siteUrl}/beirat/erika-beispiel/`)
   })
 })

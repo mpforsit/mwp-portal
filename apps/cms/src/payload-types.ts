@@ -133,6 +133,10 @@ export interface User {
   id: number;
   name?: string | null;
   /**
+   * Leer = keine öffentliche Team-Seite
+   */
+  slug?: string | null;
+  /**
    * Kurzqualifikation, z. B. Wissenschaftsredakteurin
    */
   qualification?: string | null;
@@ -167,6 +171,10 @@ export interface User {
 export interface Medic {
   id: number;
   name: string;
+  /**
+   * Leer = keine öffentliche Beirats-Seite
+   */
+  slug?: string | null;
   /**
    * z. B. Dr. med.
    */
@@ -422,6 +430,7 @@ export interface PayloadMigration {
  */
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
+  slug?: T;
   qualification?: T;
   role?: T;
   medicProfile?: T;
@@ -493,6 +502,7 @@ export interface MediaSelect<T extends boolean = true> {
  */
 export interface MedicsSelect<T extends boolean = true> {
   name?: T;
+  slug?: T;
   title?: T;
   specialty?: T;
   photo?: T;

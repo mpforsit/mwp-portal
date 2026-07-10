@@ -255,3 +255,38 @@ für eine Beispielseite, sobald Staging öffentlich erreichbar ist
 publishingPrinciples nach Launch pflegen (TODO im Code).
 **Nächster Schritt:** 1.5 Beirats- und Autorenseiten (dann Person-
 Knoten um url ergänzen, TODOs in jsonld.ts).
+
+## 2026-07-10 — Schritt 1.5: Beirats- und Autorenseiten
+
+**Was:**
+- CMS: `slug` (unique, optional) auf Medics und Users — nur Einträge
+  mit Slug bekommen eine öffentliche Seite. Seed vergibt Slugs
+  (erika-beispiel, rena-redaktion) inkl. Nachzieh-Pfad für Bestände.
+- Web: `/beirat/` (Übersicht aller Ärzte mit Slug),
+  `/beirat/[slug]/` (Foto falls vorhanden, Name mit Titel,
+  Facharztbezeichnung, Bio, Praxis-Link, Liste der medizinisch
+  geprüften publizierten Artikel), `/team/[slug]/` (Name,
+  Kurzqualifikation, verfasste Artikel). Artikel-Listen werden aus dem
+  gemeinsamen fetchArticles-Ergebnis gefiltert, keine Extra-Queries.
+- `payload.ts` refaktoriert auf generisches `fetchAll` (Pagination),
+  neu: fetchMedics, fetchTeamMembers (nur mit Build-Token — Users
+  sind zugriffsgeschützt), mediaUrl (CMS-relative Upload-URLs →
+  absolut).
+- JSON-LD: `medicPersonNodes`/`teamPersonNodes` nach Template 2.7
+  (name, honorificPrefix, jobTitle, url, sameAs=practiceUrl bzw.
+  affiliation=#org); Artikel-Graph verlinkt jetzt author.url
+  (/team/…) und Reviewer-url (/beirat/…), wenn Slugs existieren —
+  die TODOs aus 1.4 sind damit erledigt.
+- Tests: 15/15 in web (neu: Person-Schemata 2.7, Entitäts-Links im
+  Artikel-Graph).
+
+**Verifikation:** Build gegen CMS: /beirat/, /beirat/erika-beispiel/,
+/team/rena-redaktion/ gebaut; Person-JSON-LD vollständig; beide
+Profilseiten listen den publizierten Artikel; Artikel-Graph zeigt
+author.url und reviewer.url auf die Profilseiten. Lint/Typecheck/
+Tests (15+7) über alle Workspaces grün.
+**Vorbehalte:** Medic-Fotos: Upload-URLs zeigen auf den CMS-Host —
+für Prod gehört das Media-Verzeichnis hinter dieselbe Domain/CDN
+(Coolify-Setup-Thema). Kein Team-Index (/team/) — Plan verlangt nur
+die Beirats-Übersicht.
+**Nächster Schritt:** 1.6 Podcast-Episodenseiten.

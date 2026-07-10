@@ -80,6 +80,7 @@ const run = async (): Promise<void> => {
     name: string,
     qualification?: string,
     medicProfile?: number,
+    slug?: string,
   ): Promise<User> => {
     const existing = await payload.find({
       collection: 'users',
@@ -87,12 +88,12 @@ const run = async (): Promise<void> => {
     })
     const found = existing.docs[0]
     if (found) {
-      if (!found.name) {
-        // Nachziehen für Bestände aus Schritt 1.1
+      if (!found.name || (slug && !found.slug)) {
+        // Nachziehen für Bestände aus früheren Seed-Ständen
         return payload.update({
           collection: 'users',
           id: found.id,
-          data: { name, qualification },
+          data: { name, qualification, slug },
         })
       }
       console.log(`vorhanden: ${email}`)
@@ -107,6 +108,7 @@ const run = async (): Promise<void> => {
         name,
         qualification,
         medicProfile,
+        slug,
       },
     })
     console.log(`angelegt: ${email} (${role})`)
@@ -125,12 +127,20 @@ const run = async (): Promise<void> => {
       collection: 'medics',
       data: {
         name: 'Dr. med. Erika Beispiel',
+        slug: 'erika-beispiel',
         title: 'Dr. med.',
         specialty: 'Laboratoriumsmedizin',
         bio: 'Beispielprofil für die lokale Entwicklung.',
+        practiceUrl: 'https://praxis.example',
       },
     })
     console.log('angelegt: Medic-Profil Dr. med. Erika Beispiel')
+  } else if (!medic.slug) {
+    medic = await payload.update({
+      collection: 'medics',
+      id: medic.id,
+      data: { slug: 'erika-beispiel', practiceUrl: 'https://praxis.example' },
+    })
   }
 
   const admin = await ensureUser(
@@ -144,6 +154,8 @@ const run = async (): Promise<void> => {
     'redaktion',
     'Rena Redaktion',
     'Wissenschaftsredakteurin',
+    undefined,
+    'rena-redaktion',
   )
   const arzt = await ensureUser(
     'arzt@example.com',

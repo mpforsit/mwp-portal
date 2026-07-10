@@ -1,7 +1,7 @@
 // JSON-LD-Graphen nach docs/artefakte/redaktions-template-geo-checkliste.md
 // Teil 2. Reine Funktionen (Build-Time), gerendert über JsonLd.astro.
 // Alle Werte kommen aus CMS-Feldern — nie aus dem Build-Zeitpunkt.
-import { formatMedicName, type Article } from './payload'
+import { formatMedicName, type Article, type Medic, type User } from './payload'
 
 export type JsonLdNode = Record<string, unknown>
 
@@ -88,7 +88,7 @@ export const articleNodes = (
     author: {
       '@type': 'Person',
       name: author?.name ?? 'Redaktion',
-      // url folgt mit den Team-Seiten (Schritt 1.5)
+      ...(author?.slug ? { url: `${siteUrl}/team/${author.slug}/` } : {}),
     },
     publisher: { '@id': `${siteUrl}/#org` },
     datePublished: dateOnly(article.createdAt),
@@ -108,7 +108,9 @@ export const articleNodes = (
       '@id': `${pageUrl}#reviewer`,
       name: formatMedicName(reviewedBy),
       jobTitle: reviewedBy.specialty,
-      // url folgt mit den Beirats-Seiten (Schritt 1.5)
+      ...(reviewedBy.slug
+        ? { url: `${siteUrl}/beirat/${reviewedBy.slug}/` }
+        : {}),
     })
   }
 
@@ -143,6 +145,43 @@ export const articleNodes = (
   })
 
   return nodes
+}
+
+// --- Beirats-/Autorenseiten (Template 2.7): Person-Markup — die
+// Entitäts-Anker, auf die reviewedBy/author zeigen --------------------
+export const medicPersonNodes = (
+  medic: Pick<Medic, 'name' | 'slug' | 'title' | 'specialty' | 'practiceUrl'>,
+  siteUrl: string,
+): JsonLdNode[] => {
+  const pageUrl = `${siteUrl}/beirat/${medic.slug}/`
+  return [
+    {
+      '@type': 'Person',
+      '@id': `${pageUrl}#person`,
+      name: formatMedicName(medic),
+      ...(medic.title ? { honorificPrefix: medic.title } : {}),
+      jobTitle: medic.specialty,
+      url: pageUrl,
+      ...(medic.practiceUrl ? { sameAs: [medic.practiceUrl] } : {}),
+    },
+  ]
+}
+
+export const teamPersonNodes = (
+  user: Pick<User, 'name' | 'slug' | 'qualification'>,
+  siteUrl: string,
+): JsonLdNode[] => {
+  const pageUrl = `${siteUrl}/team/${user.slug}/`
+  return [
+    {
+      '@type': 'Person',
+      '@id': `${pageUrl}#person`,
+      name: user.name,
+      ...(user.qualification ? { jobTitle: user.qualification } : {}),
+      url: pageUrl,
+      affiliation: { '@id': `${siteUrl}/#org` },
+    },
+  ]
 }
 
 export const buildGraph = (nodes: JsonLdNode[]): JsonLdNode => ({

@@ -1,0 +1,35 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { fetchMedics, formatMedicName } from '../../lib/payload'
+
+const medics = (await fetchMedics()).filter((medic) => Boolean(medic.slug))
+---
+
+<BaseLayout
+  title="Medizinischer Beirat"
+  description="Die Ärztinnen und Ärzte, die Artikel dieses Portals fachlich prüfen — mit Name, Facharztbezeichnung und Profil."
+>
+  <h1>Medizinischer Beirat</h1>
+  <p>
+    Artikel der Wissens-Zone werden vor der Veröffentlichung ärztlich
+    geprüft. Hier stehen die Personen, die diese Prüfung verantworten —
+    mit Facharztbezeichnung und Profil. Die Prüfung ist auf jedem
+    Artikel sichtbar vermerkt.
+  </p>
+  {
+    medics.length === 0 ? (
+      <p>Die Profile werden derzeit aufgebaut.</p>
+    ) : (
+      <ul class="card-list">
+        {medics.map((medic) => (
+          <li class="card">
+            <h2 class="card__title">
+              <a href={`/beirat/${medic.slug}/`}>{formatMedicName(medic)}</a>
+            </h2>
+            <p>{medic.specialty}</p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</BaseLayout>

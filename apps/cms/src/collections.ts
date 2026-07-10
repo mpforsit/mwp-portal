@@ -71,6 +71,14 @@ export const Users: CollectionConfig = {
       type: 'text',
     },
     {
+      // Autoren mit Slug bekommen eine öffentliche /team/[slug]/-Seite
+      // (Entitäts-Anker für author-Referenzen, Template 2.7)
+      name: 'slug',
+      type: 'text',
+      unique: true,
+      admin: { description: 'Leer = keine öffentliche Team-Seite' },
+    },
+    {
       // "Autor mit Kurzqualifikation" (Template Teil 1)
       name: 'qualification',
       type: 'text',
@@ -135,6 +143,14 @@ export const Medics: CollectionConfig = {
   },
   fields: [
     { name: 'name', type: 'text', required: true },
+    {
+      // öffentliche /beirat/[slug]/-Seite (Entitäts-Anker für
+      // reviewedBy-Referenzen, Template 2.7)
+      name: 'slug',
+      type: 'text',
+      unique: true,
+      admin: { description: 'Leer = keine öffentliche Beirats-Seite' },
+    },
     { name: 'title', type: 'text', admin: { description: 'z. B. Dr. med.' } },
     {
       name: 'specialty',
