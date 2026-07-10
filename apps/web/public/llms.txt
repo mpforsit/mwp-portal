@@ -1,0 +1,16 @@
+# Gesundheits- & Longevity-Portal
+
+> Deutschsprachiges Portal des Podcasts "Was ist dran an …?":
+> evidenzbasierte Deep-Dives zu Gesundheits- und Longevity-Maßnahmen
+> (medizinisch geprüft), kriterienbasierte Produktvergleiche mit
+> offengelegter, versionierter Methodik und der Weg von der Maßnahme
+> zur Messgröße ("erst messen, dann handeln").
+
+## Bereiche
+
+- [Wissen](/wissen/): redaktionelle, medizinisch geprüfte Artikel —
+  werbefrei, mit Quellenapparat, Evidenzgrad und Kernaussage je Artikel
+- [Vergleich](/vergleich/): Produktvergleiche nach dokumentierten,
+  versionierten Kriterien; Affiliate-Links klar gekennzeichnet
+- [Methodik](/methodik/): wie wir bewerten — Kriterien, Versionen und
+  die publizierte Unabhängigkeits-Korrelation
