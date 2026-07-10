@@ -53,7 +53,9 @@ const buildContentHash = (data: Record<string, unknown>): string =>
 // ------------------------------------------------------------------
 export const Users: CollectionConfig = {
   slug: 'users',
-  auth: true,
+  // useAPIKey: Build-Server authentifiziert sich für Draft-Previews
+  // (siehe docs/adr/0001-draft-preview-als-staging-build.md)
+  auth: { useAPIKey: true },
   admin: { useAsTitle: 'email' },
   access: {
     read: isLoggedIn,
@@ -62,6 +64,18 @@ export const Users: CollectionConfig = {
     delete: isAdmin,
   },
   fields: [
+    {
+      // Anzeigename für den sichtbaren Meta-Block (Template Teil 1);
+      // Ergänzung zum Referenz-Artefakt, siehe AGENT_LOG 1.3
+      name: 'name',
+      type: 'text',
+    },
+    {
+      // "Autor mit Kurzqualifikation" (Template Teil 1)
+      name: 'qualification',
+      type: 'text',
+      admin: { description: 'Kurzqualifikation, z. B. Wissenschaftsredakteurin' },
+    },
     {
       name: 'role',
       type: 'select',
@@ -366,6 +380,31 @@ export const Articles: CollectionConfig = {
 
         data.contentHash = newHash
         return data
+      },
+    ],
+    afterChange: [
+      // Publish/Update eines publizierten Artikels stößt den
+      // Frontend-Rebuild an (Coolify-Webhook, Schritt 1.3)
+      async ({ doc, previousDoc, req }) => {
+        const url = process.env.REBUILD_WEBHOOK_URL
+        if (!url) return doc
+        const isOrWasPublished =
+          doc._status === 'published' || previousDoc?._status === 'published'
+        if (!isOrWasPublished) return doc
+        try {
+          const res = await fetch(url, { method: 'POST' })
+          if (!res.ok) {
+            req.payload.logger.warn(
+              `Rebuild-Webhook antwortete mit ${res.status}`,
+            )
+          }
+        } catch (err) {
+          req.payload.logger.warn(
+            { err },
+            'Rebuild-Webhook nicht erreichbar — Deploy manuell anstoßen.',
+          )
+        }
+        return doc
       },
     ],
   },

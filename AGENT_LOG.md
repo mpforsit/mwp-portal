@@ -171,3 +171,50 @@ noch nicht existierende Seiten (kommen in 2.7 bzw. Launch-Checkliste);
 Artikelinhalt der Beispielseite ist als Platzhalter gekennzeichnet
 und nicht medizinisch geprüft.
 **Nächster Schritt:** 1.3 Payload→Astro-Anbindung & Artikel-Template.
+
+## 2026-07-10 — Schritt 1.3: Payload→Astro-Anbindung & Artikel-Template
+
+**Was:**
+- CMS: Users um `name`/`qualification` erweitert (Meta-Block braucht
+  "Autor mit Kurzqualifikation"; Ergänzung zum Referenz-Artefakt →
+  dort nachziehen), `auth.useAPIKey` aktiviert,
+  `EXPERIMENTAL_TableFeature` im Lexical-Editor (Evidenz-Tabellen),
+  afterChange-Hook ruft REBUILD_WEBHOOK_URL bei Publish/Update
+  publizierter Artikel (Fehler nur geloggt, nie blockierend).
+- Seed: Namen/Qualifikationen; Service-User build@example.com mit
+  Dev-API-Key; zweiter Beispielartikel `vitamin-d-studienlage`, der
+  regulär durch Arzt-Freigabe + Publish-Gate läuft (inkl. FAQ,
+  5 Quellen, Lexical-Tabelle, Messgröße).
+- Web: `src/lib/payload.ts` (Build-Time-Fetch mit Pagination, Typen
+  per type-only-Import aus cms/payload-types — keine Parallel-Typen),
+  `src/lib/lexical.ts` (convertLexicalToHTML mit eigenem
+  Heading-Converter: H2-Anker-IDs; TOC-Extraktion aus H2s),
+  Seitentyp `/wissen/[slug]` exakt nach Template Teil 1 (TOC,
+  RichText mit echten Tabellen, Messgrößen-Block, FAQ, nummerierte
+  Quellen mit DOI/PubMed-Links, sichtbarer Meta-Block), Wissens-Index
+  aus dem CMS; statische Beispielseite aus 1.2 entfernt.
+  Neue Dependency in web: @payloadcms/richtext-lexical (nur
+  HTML-Converter; Payload-Ökosystem, kein Fremd-Stack).
+- ADR 0001: Draft-Preview als Staging-Build-Variante
+  (PAYLOAD_DRAFT_PREVIEW) statt SSR; Build-Fetch authentifiziert sich
+  immer per Service-User-API-Key (PAYLOAD_API_TOKEN), weil Payload
+  geschützte Relationen (Autor) anonym depopuliert.
+
+**Verifikation:** Build gegen laufendes CMS; curl-Checks auf dem
+gerenderten HTML (ohne JS): Kernaussage, Tabelle, FAQ, DOI/PubMed-
+Quellen, Meta-Block (Autor, Medizinisch geprüft von … am …,
+Veröffentlicht, Aktualisiert), H2-Anker — alle vorhanden, kein
+<script>-Tag. Lighthouse auf der CMS-gerenderten Artikelseite:
+Performance 100, SEO 100. `pnpm -r typecheck`/`lint` und CMS-Tests
+(7/7) grün.
+
+**Vorbehalte:**
+- "Veröffentlicht am" nutzt createdAt (Payload hat kein separates
+  publishedAt-Feld) — bei Bedarf eigenes Feld ergänzen.
+- Rebuild-Webhook feuert pro Save; Debouncing/Queueing erst nötig,
+  wenn Redaktionsvolumen steigt.
+- CI baut das Frontend nicht gegen ein CMS (ohne PAYLOAD_API_URL:
+  leere Artikelliste, Build grün) — Staging-Build übernimmt die
+  echte Anbindung.
+- JSON-LD (@graph) kommt planmäßig erst in Schritt 1.4.
+**Nächster Schritt:** 1.4 JSON-LD-Rendering.

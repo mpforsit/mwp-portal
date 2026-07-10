@@ -1,5 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro'
+import { fetchArticles } from '../../lib/payload'
+
+const articles = await fetchArticles()
 ---
 
 <BaseLayout
@@ -9,17 +12,25 @@ import BaseLayout from '../../layouts/BaseLayout.astro'
 >
   <h1>Wissen</h1>
   <p>
-    Hier erscheinen die redaktionellen Artikel: was die Studienlage zu
-    einer Maßnahme hergibt, wie groß die Effekte sind und woran sich das
-    messen lässt. Jeder Artikel nennt seine Quellen, den Evidenzgrad und
-    die ärztliche Prüfung. Dieser Bereich ist werbefrei.
+    Was die Studienlage zu einer Maßnahme hergibt, wie groß die Effekte
+    sind und woran sich das messen lässt. Jeder Artikel nennt seine
+    Quellen, den Evidenzgrad und die ärztliche Prüfung. Dieser Bereich
+    ist werbefrei.
   </p>
-  <ul class="card-list">
-    <li class="card">
-      <h2 class="card__title">
-        <a href="/wissen/vitamin-d/">Was ist dran an Vitamin D?</a>
-      </h2>
-      <p>Beispielartikel (Platzhalter aus Schritt 1.2).</p>
-    </li>
-  </ul>
+  {
+    articles.length === 0 ? (
+      <p>Die ersten Artikel erscheinen in Kürze.</p>
+    ) : (
+      <ul class="card-list">
+        {articles.map((article) => (
+          <li class="card">
+            <h2 class="card__title">
+              <a href={`/wissen/${article.slug}/`}>{article.title}</a>
+            </h2>
+            <p>{article.kernaussage}</p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
 </BaseLayout>

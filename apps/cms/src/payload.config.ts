@@ -1,7 +1,10 @@
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { postgresAdapter } from '@payloadcms/db-postgres'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import {
+  EXPERIMENTAL_TableFeature,
+  lexicalEditor,
+} from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload'
 import sharp from 'sharp'
 
@@ -22,7 +25,14 @@ export default buildConfig({
     importMap: { baseDir: path.resolve(dirname) },
   },
   collections: [Users, Media, Medics, Categories, Articles, PodcastEpisodes],
-  editor: lexicalEditor(),
+  // Tabellen-Feature: Evidenz-Tabellen als echtes HTML-table
+  // (Redaktions-Template Teil 1)
+  editor: lexicalEditor({
+    features: ({ defaultFeatures }) => [
+      ...defaultFeatures,
+      EXPERIMENTAL_TableFeature(),
+    ],
+  }),
   sharp,
   secret: process.env.PAYLOAD_SECRET ?? '',
   typescript: {
