@@ -1,0 +1,32 @@
+---
+import SiteFooter from '../components/SiteFooter.astro'
+import SiteHeader from '../components/SiteHeader.astro'
+import '../styles/global.css'
+
+interface Props {
+  title: string
+  description: string
+  activeZone?: 'wissen' | 'vergleich' | 'messen'
+}
+
+const { title, description, activeZone } = Astro.props
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+  </head>
+  <body>
+    <SiteHeader activeZone={activeZone} />
+    <main class="site-main">
+      <div class="page">
+        <slot />
+      </div>
+    </main>
+    <SiteFooter />
+  </body>
+</html>

@@ -1,27 +1,39 @@
 ---
-const zones = [
-  { href: '/wissen/', label: 'Wissen' },
-  { href: '/vergleich/', label: 'Vergleich' },
-  { href: '/messen/', label: 'Messen' },
-]
+import BaseLayout from '../layouts/BaseLayout.astro'
 ---
 
-<!doctype html>
-<html lang="de">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Portal — Platzhalter</title>
-  </head>
-  <body>
-    <h1>Portal-Grundgerüst</h1>
-    <p>Platzhalter-Startseite aus Schritt 0.1. Layouts, Designsystem und Zonen folgen in Schritt 1.2.</p>
-    <nav>
-      <ul>
-        {zones.map((zone) => (
-          <li><a href={zone.href}>{zone.label}</a></li>
-        ))}
-      </ul>
-    </nav>
-  </body>
-</html>
+<BaseLayout
+  title="Portal — Wissen, Vergleich, Messen"
+  description="Evidenzbasierte Antworten auf Gesundheits- und Longevity-Fragen: verständlich erklärt, methodisch verglichen, messbar gemacht."
+>
+  <h1>Was ist dran — und was folgt daraus?</h1>
+  <p>
+    Dieses Portal prüft Maßnahmen für Gesundheit und Langlebigkeit anhand
+    der Studienlage. Es erklärt, was belegt ist, vergleicht Produkte nach
+    offengelegten Kriterien und zeigt, welche Messgröße den Erfolg
+    überprüfbar macht.
+  </p>
+  <ul class="card-list">
+    <li class="card">
+      <h2 class="card__title"><a href="/wissen/">Wissen</a></h2>
+      <p>
+        Medizinisch geprüfte Artikel mit Quellen, Evidenzgrad und einer
+        Kernaussage, die für sich steht. Ohne Werbung.
+      </p>
+    </li>
+    <li class="card">
+      <h2 class="card__title"><a href="/vergleich/">Vergleich</a></h2>
+      <p>
+        Produktvergleiche nach dokumentierten, versionierten Kriterien.
+        Vergütete Links sind einzeln gekennzeichnet.
+      </p>
+    </li>
+    <li class="card">
+      <h2 class="card__title"><a href="/messen/">Messen</a></h2>
+      <p>
+        Erst messen, dann handeln: Biomarker verstehen, Ausgangswert
+        bestimmen, Wirkung nach etwa zwölf Wochen überprüfen.
+      </p>
+    </li>
+  </ul>
+</BaseLayout>

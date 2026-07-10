@@ -144,3 +144,30 @@ API-Zugriffe: Draft-Artikel unsichtbar, /api/users verweigert.
 Manuell offen: Durchklicken im Admin-UI mit allen drei Rollen
 (Login-Daten siehe Seed; Passwort `changeme!42`).
 **Nächster Schritt:** 1.2 Astro-Grundgerüst & Designsystem.
+
+## 2026-07-10 — Schritt 1.2: Astro-Grundgerüst & Designsystem
+
+**Was:** Designsystem als CSS-Custom-Properties in
+`src/styles/global.css` (warme Neutraltöne, eine Akzentfarbe Petrol,
+fluid-Typo-Skala, Dark Mode via prefers-color-scheme, BEM-ähnliche
+Klassen, kein Tailwind/keine UI-Lib, kein JS). Layouts `BaseLayout`
+und `ArticleLayout` (Kernaussage-Box mit Evidenz-/Stand-Badges,
+720px Content-Breite), Komponenten SiteHeader (drei Zonen als
+Hauptnavigation, aria-current) und SiteFooter (Methodik/Transparenz/
+Impressum/Datenschutz). Seiten: Startseite mit Zonen-Karten,
+Platzhalter für /wissen/, /vergleich/ (mit UWG-Bereichshinweis),
+/messen/ sowie Artikel-Beispielseite `/wissen/vitamin-d/` mit
+Evidenz-Tabelle, FAQ und Quellen-Platzhaltern. UI-Texte gemäß
+Tonalität aus strategie-kontext.md (nüchtern, keine Superlative,
+Transparenz offen benannt).
+**Verifikation:** Build grün (5 Seiten); Lighthouse auf der
+Artikel-Beispielseite: Performance 100, SEO 100, Accessibility 100,
+Best Practices 96 (Budget >95 für Performance/SEO erfüllt);
+Responsive-Check mobil (390px) und Dark Mode per
+Playwright-Screenshots geprüft; `pnpm -r typecheck`/`lint` grün.
+**Vorbehalte:** Portalname weiterhin Platzhalter ("Portal");
+Footer-Links (Methodik/Transparenz/Impressum/Datenschutz) zeigen auf
+noch nicht existierende Seiten (kommen in 2.7 bzw. Launch-Checkliste);
+Artikelinhalt der Beispielseite ist als Platzhalter gekennzeichnet
+und nicht medizinisch geprüft.
+**Nächster Schritt:** 1.3 Payload→Astro-Anbindung & Artikel-Template.

@@ -1,0 +1,35 @@
+---
+interface Props {
+  activeZone?: 'wissen' | 'vergleich' | 'messen'
+}
+
+const { activeZone } = Astro.props
+
+const zones = [
+  { id: 'wissen', href: '/wissen/', label: 'Wissen' },
+  { id: 'vergleich', href: '/vergleich/', label: 'Vergleich' },
+  { id: 'messen', href: '/messen/', label: 'Messen' },
+] as const
+---
+
+<header class="site-header">
+  <div class="page site-header__inner">
+    <a class="site-header__brand" href="/">Portal</a>
+    <nav class="site-nav" aria-label="Hauptnavigation">
+      {
+        zones.map((zone) => (
+          <a
+            class:list={[
+              'site-nav__link',
+              { 'site-nav__link--active': zone.id === activeZone },
+            ]}
+            href={zone.href}
+            aria-current={zone.id === activeZone ? 'page' : undefined}
+          >
+            {zone.label}
+          </a>
+        ))
+      }
+    </nav>
+  </div>
+</header>
