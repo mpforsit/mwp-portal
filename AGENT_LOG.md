@@ -393,3 +393,37 @@ Shop-Link erzeugt shop_outbound_click im dataLayer mit URL.
 Plausible-Instanz deployen (Coolify), echte URLs als Envs; finale
 Datenschutzerklärung vom Anwalt.
 **Nächster Schritt:** 1.9 Technisches SEO/GEO-Finish.
+
+## 2026-07-11 — Schritt 1.9: Technisches SEO/GEO-Finish
+
+**Was:**
+- XML-Sitemaps (Build-Time, Astro-Endpoints, keine Dependency):
+  `/sitemap-index.xml` → vier Zonen-Segmente (wissen mit
+  Artikel-lastmod aus lastFactCheck, vergleich/messen vorerst nur
+  Zonen-Startseiten, portal mit Podcast/Beirat/Team/Datenschutz).
+  robots.txt-Verweis passt (Platzhalter-Domain).
+- BaseLayout: rel=canonical (aus Astro.site + Pfad), OpenGraph
+  (og:title/description/type/url/site_name/locale de_DE) und
+  twitter:card aus den CMS-gespeisten Props; Artikel senden
+  og:type=article. Kein og:image, solange kein Logo existiert.
+- IndexNow: Web-Build erzeugt /<key>.txt aus INDEXNOW_KEY
+  (dynamische Route, ohne Key keine Datei); CMS-afterChange pingt
+  bing.com/indexnow mit der Artikel-URL bei Publish (Fehler nur
+  geloggt). Gleicher Key in beiden Envs.
+- 404.astro (mit Zonen-Einstiegen) und statisches public/500.html
+  (self-contained für Webserver/CDN-Fehlerfälle).
+- `scripts/geo-audit.sh <URL> [--article]`: prüft per curl ohne JS
+  H1 + JSON-LD, mit --article zusätzlich Kernaussage-Box und
+  FAQ-Sektion; Exit ≠ 0 bei fehlenden Elementen.
+
+**Verifikation:** Build erzeugt alle fünf Sitemaps (XML-valide,
+geprüft mit ElementTree), Key-Datei, 404/500; canonical + og:type
+im Artikel-HTML korrekt; geo-audit.sh grün gegen alle neun
+Seitentypen (Artikel mit --article). Lint/Typecheck/Tests (16+9+7)
+grün.
+**Manuell offen:** Search Console + Bing Webmaster Tools
+verifizieren und Sitemap einreichen (braucht Live-Domain); echten
+INDEXNOW_KEY generieren (z. B. openssl rand -hex 16) und in beide
+Envs setzen; og:image + Logo nachrüsten, sobald Branding steht.
+**Nächster Schritt:** 1.10/1.11 (Content-Produktion, Go-Live —
+überwiegend manuell) bzw. Phase 2 (Vergleichs-Engine).

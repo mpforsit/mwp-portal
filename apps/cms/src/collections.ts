@@ -405,25 +405,46 @@ export const Articles: CollectionConfig = {
     ],
     afterChange: [
       // Publish/Update eines publizierten Artikels stößt den
-      // Frontend-Rebuild an (Coolify-Webhook, Schritt 1.3)
+      // Frontend-Rebuild an (Coolify-Webhook, Schritt 1.3) und pingt
+      // IndexNow/Bing (Schritt 1.9). Fehler nur loggen, nie blockieren.
       async ({ doc, previousDoc, req }) => {
-        const url = process.env.REBUILD_WEBHOOK_URL
-        if (!url) return doc
         const isOrWasPublished =
           doc._status === 'published' || previousDoc?._status === 'published'
         if (!isOrWasPublished) return doc
-        try {
-          const res = await fetch(url, { method: 'POST' })
-          if (!res.ok) {
+
+        const rebuildUrl = process.env.REBUILD_WEBHOOK_URL
+        if (rebuildUrl) {
+          try {
+            const res = await fetch(rebuildUrl, { method: 'POST' })
+            if (!res.ok) {
+              req.payload.logger.warn(
+                `Rebuild-Webhook antwortete mit ${res.status}`,
+              )
+            }
+          } catch (err) {
             req.payload.logger.warn(
-              `Rebuild-Webhook antwortete mit ${res.status}`,
+              { err },
+              'Rebuild-Webhook nicht erreichbar — Deploy manuell anstoßen.',
             )
           }
-        } catch (err) {
-          req.payload.logger.warn(
-            { err },
-            'Rebuild-Webhook nicht erreichbar — Deploy manuell anstoßen.',
-          )
+        }
+
+        const indexNowKey = process.env.INDEXNOW_KEY
+        const siteUrl = process.env.SITE_URL?.replace(/\/$/, '')
+        if (indexNowKey && siteUrl && doc._status === 'published') {
+          const pageUrl = `${siteUrl}/wissen/${doc.slug}/`
+          try {
+            const res = await fetch(
+              `https://www.bing.com/indexnow?url=${encodeURIComponent(pageUrl)}&key=${indexNowKey}`,
+            )
+            if (!res.ok) {
+              req.payload.logger.warn(
+                `IndexNow-Ping antwortete mit ${res.status}`,
+              )
+            }
+          } catch (err) {
+            req.payload.logger.warn({ err }, 'IndexNow-Ping fehlgeschlagen.')
+          }
         }
         return doc
       },
