@@ -481,3 +481,39 @@ Transparenz-View geprüft.
 Workspaces: Lint/Typecheck grün, Tests 16+8+23+7.
 **Nächster Schritt:** 2.3 Pflege-Workflow (mit ADR zur
 Admin-UI-Entscheidung).
+
+## 2026-07-11 — Schritt 2.3: Pflege-Workflow (Admin-UI in der API)
+
+**Was:**
+- ADR 0002: Entscheidung für ein minimales, server-gerendertes
+  Admin-UI in /apps/api statt Payload-Custom-View. Gründe: Payload
+  kann externe Tabellen nicht nativ, ein Custom-View müsste die
+  gesamte CRUD-Logik gegen das vergleich-Schema selbst bauen und
+  würde Engine-SQL in den CMS-Prozess tragen (Kapselungsregel).
+- `src/admin-vergleich.ts` unter /admin/vergleich: Kategorien-
+  Übersicht, Kategorie-Seite (Produkte mit Score/Rang, Produkt
+  anlegen), Produkt-Seite (attributes-JSON pflegen, Bewertungsliste
+  mit Status, Bewertungsformular aus dem criteria-JSONB generiert —
+  Selects für map-Kriterien, Zahlenfelder für bands — mit
+  Preview-Score und "Speichern (unpubliziert)"), Publizieren.
+  Kein Client-JS, keine neuen Dependencies (urlencoded-Parser
+  handgeschrieben, Basic-Auth mit timingSafeEqual; ohne
+  ADMIN_USER/ADMIN_PASSWORD ist der Bereich 503-gesperrt).
+- Publizieren setzt in einer Transaktion automatisch superseded_by
+  auf ältere publizierte, nicht abgelöste Bewertungen desselben
+  Produkts (Korrektur-Kette aus dem Artefakt) —
+  `publishEvaluation` im neuen Repository-Modul
+  `src/evaluations-repo.ts`, das auch von den 2.2-Endpoints genutzt
+  wird (loadCriteria/insertEvaluation dorthin refaktoriert).
+
+**Verifikation:** 8 neue Integrationstests (Auth-Pflicht, 503 ohne
+Config, Anlegen → Preview ohne Persistenz → Speichern unpubliziert →
+Publizieren → Ranking → Nachfolger-Publish setzt superseded_by und
+Ranking zeigt neuen Score). API gesamt 31 Tests grün; Smoke-Test
+gegen Dev-DB im Browser-freien curl (401 ohne Auth, Seiten rendern,
+Seed-Bewertung sichtbar). Alle Workspaces grün (16+8+31+7).
+**Vorbehalte:** Kategorien/Methodik-Versionen anlegen läuft noch per
+SQL/Seed (bewusst: selten, hohe Sorgfalt — bei Bedarf später ins
+Admin). Prod: Route zusätzlich netzseitig schützen (Tailscale,
+siehe ADR).
+**Nächster Schritt:** 2.4 Vergleichsseiten-Frontend.
