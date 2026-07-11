@@ -3,11 +3,13 @@
 // docs/artefakte/redaktions-template-geo-checkliste.md Teil 1:
 // Kernaussage-Box (Layout), TOC aus H2s, RichText mit echten Tabellen,
 // FAQ, Messgrößen-Block, nummerierte Quellen, sichtbarer Meta-Block.
+import NewsletterSignup from '../../components/NewsletterSignup.astro'
 import ArticleLayout from '../../layouts/ArticleLayout.astro'
 import { articleNodes } from '../../lib/jsonld'
 import { extractToc, renderRichText } from '../../lib/lexical'
 import {
   fetchArticles,
+  fetchNewsletterSettings,
   formatDate,
   formatMedicName,
   type Article,
@@ -27,6 +29,7 @@ interface Props {
 }
 
 const { article } = Astro.props
+const newsletterSettings = await fetchNewsletterSettings()
 
 const asObject = <T,>(value: T | number | null | undefined): T | null =>
   typeof value === 'object' && value !== null ? value : null
@@ -143,6 +146,15 @@ const sourceHref = (s: NonNullable<Article['sources']>[number]): string | null =
           })}
         </ol>
       </section>
+    )
+  }
+
+  {
+    newsletterSettings && (
+      <NewsletterSignup
+        settings={newsletterSettings}
+        interest={category?.slug ?? 'allgemein'}
+      />
     )
   }
 

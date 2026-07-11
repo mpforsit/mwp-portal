@@ -380,6 +380,27 @@ const run = async (): Promise<void> => {
     console.log('angelegt: Podcast-Episode 1')
   }
 
+  // Newsletter-Global: sicherstellen, dass die Default-Texte
+  // persistiert sind (Frontend liest das Global zur Build-Zeit)
+  const newsletter = await payload.findGlobal({ slug: 'newsletter-settings' })
+  if (!newsletter.datenschutzhinweis) {
+    await payload.updateGlobal({
+      slug: 'newsletter-settings',
+      data: {
+        heading: 'Der Newsletter zum Podcast',
+        intro:
+          'Neue Folgen, neue Artikel und was sich an der Studienlage ' +
+          'geändert hat — per E-Mail, ohne Umwege.',
+        datenschutzhinweis:
+          'Anmeldung mit Double-Opt-in; Abmeldung jederzeit über den Link ' +
+          'in jeder E-Mail. Gespeichert werden die E-Mail-Adresse und das ' +
+          'Themeninteresse der Seite, über die die Anmeldung erfolgte — ' +
+          'keine weiteren Daten. Details in der Datenschutzerklärung.',
+      },
+    })
+    console.log('angelegt: Newsletter-Global')
+  }
+
   console.log('Seed abgeschlossen.')
   process.exit(0)
 }

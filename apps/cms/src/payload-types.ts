@@ -95,8 +95,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'newsletter-settings': NewsletterSetting;
+  };
+  globalsSelect: {
+    'newsletter-settings': NewsletterSettingsSelect<false> | NewsletterSettingsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -641,6 +645,30 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "newsletter-settings".
+ */
+export interface NewsletterSetting {
+  id: number;
+  heading: string;
+  intro: string;
+  datenschutzhinweis: string;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "newsletter-settings_select".
+ */
+export interface NewsletterSettingsSelect<T extends boolean = true> {
+  heading?: T;
+  intro?: T;
+  datenschutzhinweis?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

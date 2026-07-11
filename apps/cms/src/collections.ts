@@ -8,7 +8,12 @@
 // =====================================================================
 
 import crypto from 'node:crypto'
-import type { Access, CollectionConfig, FieldAccess } from 'payload'
+import type {
+  Access,
+  CollectionConfig,
+  FieldAccess,
+  GlobalConfig,
+} from 'payload'
 
 // ------------------------------------------------------------------
 // Access-Helfer
@@ -424,6 +429,41 @@ export const Articles: CollectionConfig = {
       },
     ],
   },
+}
+
+// ------------------------------------------------------------------
+// Newsletter-Global: Texte der Capture-Komponente (Schritt 1.7);
+// der Datenschutzhinweis ist redaktionell pflegbar, nicht hartkodiert
+// ------------------------------------------------------------------
+export const NewsletterSettings: GlobalConfig = {
+  slug: 'newsletter-settings',
+  access: { read: () => true, update: isEditorOrAdmin },
+  fields: [
+    {
+      name: 'heading',
+      type: 'text',
+      required: true,
+      defaultValue: 'Der Newsletter zum Podcast',
+    },
+    {
+      name: 'intro',
+      type: 'textarea',
+      required: true,
+      defaultValue:
+        'Neue Folgen, neue Artikel und was sich an der Studienlage ' +
+        'geändert hat — per E-Mail, ohne Umwege.',
+    },
+    {
+      name: 'datenschutzhinweis',
+      type: 'textarea',
+      required: true,
+      defaultValue:
+        'Anmeldung mit Double-Opt-in; Abmeldung jederzeit über den Link ' +
+        'in jeder E-Mail. Gespeichert werden die E-Mail-Adresse und das ' +
+        'Themeninteresse der Seite, über die die Anmeldung erfolgte — ' +
+        'keine weiteren Daten. Details in der Datenschutzerklärung.',
+    },
+  ],
 }
 
 // ------------------------------------------------------------------

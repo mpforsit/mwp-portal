@@ -433,3 +433,69 @@ th {
 .transcript__speaker {
   color: var(--color-accent-strong);
 }
+
+/* --- Newsletter-Capture -------------------------------------------------- */
+
+.newsletter {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  margin-block: var(--space-6);
+  max-width: var(--content-width);
+}
+
+.newsletter__heading {
+  margin-top: 0;
+  font-size: var(--text-lg);
+}
+
+.newsletter__label {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.newsletter__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.newsletter__input {
+  flex: 1 1 220px;
+  font: inherit;
+  color: inherit;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+}
+
+.newsletter__submit {
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-surface);
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.newsletter__submit:hover {
+  background: var(--color-accent-strong);
+}
+
+.newsletter__status {
+  min-height: 1.5em;
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-sm);
+}
+
+.newsletter__privacy {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  margin: var(--space-3) 0 0;
+}

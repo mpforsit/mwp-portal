@@ -322,3 +322,38 @@ Abo-Links und PODIGEE_BASE_URL sind Platzhalter bis zum
 Podcast-Setup. /podcast/ hängt noch nicht in der Hauptnavigation
 (Plan definiert die Nav mit den drei Zonen; ggf. bei Launch-Politur).
 **Nächster Schritt:** 1.7 laut Umsetzungsplan.
+
+## 2026-07-11 — Schritt 1.7: Newsletter-Capture (Brevo DOI)
+
+**Was:**
+- API (`apps/api/src/newsletter.ts`): POST /newsletter/subscribe →
+  Brevo Double-Opt-in-Endpoint. Als Attribut geht ausschließlich
+  `INTERESSE_<KATEGORIE>=true` mit — buildBrevoPayload ist eine reine,
+  getestete Funktion; der Test prüft die exakte Feldliste und bricht,
+  sobald je mehr übertragen würde (Rote-Linie-Wächter). Validierung
+  von E-Mail und Interest-Slug; 503 bei fehlender Brevo-Config, 502
+  bei Brevo-Fehler; CORS-Header (WEB_ORIGIN) + OPTIONS-Route manuell
+  statt @fastify/cors (keine neue Dependency). Envs: BREVO_API_KEY,
+  BREVO_LIST_ID, BREVO_DOI_TEMPLATE_ID, BREVO_DOI_REDIRECT_URL,
+  WEB_ORIGIN. 9 Tests (Parsing, Payload, Route mit gemocktem fetch).
+  tsconfig in typecheck (src+tests, noEmit) und tsconfig.build.json
+  aufgeteilt; ESM-Importe mit .js-Endung (NodeNext).
+- CMS: Global `newsletter-settings` (heading, intro,
+  datenschutzhinweis — redaktionell pflegbar statt hartkodiert),
+  öffentlich lesbar; Seed persistiert die Default-Texte.
+- Web: NewsletterSignup.astro (interaktive Insel: fetch-Submit,
+  Erfolgs-/Fehler-Status via role=status, noscript-Hinweis,
+  Datenschutzhinweis aus dem Global). Platzierung laut Plan: inline
+  nach dem Artikel (interest = Kategorie-Slug der Seite) und im
+  Footer jeder Seite (interest = allgemein).
+  Env PUBLIC_NEWSLETTER_API_URL.
+
+**Verifikation:** Build gegen CMS: Inline-Capture mit
+data-interest="vitamin-d" auf der Artikelseite, Footer-Capture
+überall, Datenschutzhinweis gerendert. API-Route per curl: 503 ohne
+Brevo-Keys (korrekt), CORS-Header gesetzt. Tests 9+16+7, Lint/
+Typecheck über alle Workspaces grün.
+**Manuell offen:** Brevo-Account: Liste, DOI-Template und
+Bestätigungsseite (/newsletter/bestaetigt/ existiert noch nicht als
+Seite — bei 1.9/Launch ergänzen); echte Keys als Coolify-Secrets.
+**Nächster Schritt:** 1.8 Consent, Tracking, Zweit-Analytics.

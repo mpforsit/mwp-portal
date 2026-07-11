@@ -1,9 +1,18 @@
 ---
+import { fetchNewsletterSettings } from '../lib/payload'
+import NewsletterSignup from './NewsletterSignup.astro'
+
 const year = new Date().getFullYear()
+const newsletterSettings = await fetchNewsletterSettings()
 ---
 
 <footer class="site-footer">
   <div class="page">
+    {
+      newsletterSettings && (
+        <NewsletterSignup settings={newsletterSettings} interest="allgemein" />
+      )
+    }
     <nav class="site-footer__nav" aria-label="Rechtliches">
       <a class="site-footer__link" href="/methodik/">So testen wir</a>
       <a class="site-footer__link" href="/transparenz/">Transparenz</a>

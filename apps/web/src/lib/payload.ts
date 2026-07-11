@@ -5,11 +5,12 @@ import type {
   Article,
   Media,
   Medic,
+  NewsletterSetting,
   PodcastEpisode,
   User,
 } from '../../../cms/src/payload-types'
 
-export type { Article, Media, Medic, PodcastEpisode, User }
+export type { Article, Media, Medic, NewsletterSetting, PodcastEpisode, User }
 
 const apiUrl = import.meta.env.PAYLOAD_API_URL as string | undefined
 // Build authentifiziert sich per API-Key eines Service-Users: nötig,
@@ -69,6 +70,19 @@ export const fetchArticles = async (): Promise<Article[]> => {
 }
 
 export const fetchMedics = async (): Promise<Medic[]> => fetchAll<Medic>('medics')
+
+export const fetchNewsletterSettings =
+  async (): Promise<NewsletterSetting | null> => {
+    if (!apiUrl) return null
+    const res = await fetch(`${apiUrl}/globals/newsletter-settings`)
+    if (!res.ok) {
+      console.warn(
+        `Newsletter-Global nicht ladbar (${res.status}) — Block entfällt.`,
+      )
+      return null
+    }
+    return (await res.json()) as NewsletterSetting
+  }
 
 export const fetchEpisodes = async (): Promise<PodcastEpisode[]> => {
   const episodes = await fetchAll<PodcastEpisode>('podcast-episodes')
