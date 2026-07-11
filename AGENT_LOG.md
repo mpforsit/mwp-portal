@@ -517,3 +517,45 @@ SQL/Seed (bewusst: selten, hohe Sorgfalt — bei Bedarf später ins
 Admin). Prod: Route zusätzlich netzseitig schützen (Tailscale,
 siehe ADR).
 **Nächster Schritt:** 2.4 Vergleichsseiten-Frontend.
+
+## 2026-07-11 — Schritt 2.4: Vergleichsseiten-Frontend
+
+**Was:**
+- ADR 0003 + additive Migration: `product_evaluations.summary`
+  (Kurzfazit) — Template 2.3 verlangt reviewBody, das Artefakt hat
+  keine Spalte. Bewusst nicht trigger-geschützt (redaktionelle
+  Zusammenfassung; das Urteil bleibt geschützt). Demo-Seed 0002
+  (Kurzfazit, Affiliate-Partner/-Link, Preisstichprobe).
+- API: öffentliche Lese-Endpoints `/api/vergleich` und
+  `/api/vergleich/:slug` (vergleich-public.ts) — nur publizierte
+  Daten aus current_ranking, Affiliate-Links OHNE Provisionshöhen;
+  exportierte Response-Typen. Admin-Formular um Kurzfazit erweitert;
+  vitest.config (fileParallelism: false — Integrationstests teilen
+  die Test-DB, vorher flaky).
+- Web: `/vergleich/[kategorie]/` — vollständige Tabelle statisch im
+  HTML (Rang, Produkt, Score je Kriterium mit Rohwert, Gesamt, Preis
+  als Text mit Stand-Datum aus price_snapshots, Kurzfazit,
+  Affiliate-Buttons mit sichtbarem "Anzeige"-Label und
+  rel="sponsored noopener" auf /go/[linkId], data-shop-link fürs
+  Outbound-Tracking aus 1.8). Bereichshinweis oben mit Link
+  "Bewertet nach Methodik v{n}" (/methodik/[kategorie]/ folgt in
+  2.6). Sortierung als progressive Enhancement: JS ersetzt th-Texte
+  durch Sortier-Buttons; ohne JS statische Tabelle nach Rang.
+  Vergleichs-Index aus der API; sitemap-vergleich.xml listet die
+  Kategorien. Typen type-only aus der API importiert.
+- JSON-LD `comparisonNodes` exakt nach Template 2.3: ItemList +
+  Product + Review (author = Organization-@id, ratingValue =
+  total_score, bestRating 100), bewusst KEIN AggregateRating, KEIN
+  offers. 3 neue Schema-Tests (inkl. Negativ-Checks).
+- geo-audit.sh um --vergleich erweitert (Tabelle, Bereichshinweis,
+  Methodik-Link, sponsored).
+
+**Verifikation:** Build gegen API+CMS; geo-audit --vergleich grün;
+JSON-LD im gebauten HTML geprüft (ItemList, rating 86.5, reviewBody,
+kein AggregateRating/offers); Preis mit Stand-Datum; Browser-Check:
+10 Sortier-Buttons per JS, Klick-Sortierung ok, ohne JS statische
+Tabelle im DOM. Alle Workspaces grün (19+8+31+7).
+**Vorbehalte:** /go/[linkId] (Ziel der Affiliate-Buttons) kommt in
+2.5; /methodik/[kategorie]/ in 2.6 — beide Links zeigen bis dahin
+ins Leere. Artefakt um summary-Spalte ergänzen (Maintainer).
+**Nächster Schritt:** 2.5 Affiliate-Redirects & Kennzeichnung.

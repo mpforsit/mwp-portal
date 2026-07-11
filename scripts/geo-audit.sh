@@ -2,8 +2,11 @@
 # GEO-Audit (Schritt 1.9): prüft per curl OHNE JS, ob die für
 # KI-Extraktion nötigen Elemente im Initial-HTML stehen.
 # Verwendung:
-#   scripts/geo-audit.sh <URL>            # H1 + JSON-LD (alle Seitentypen)
-#   scripts/geo-audit.sh <URL> --article  # zusätzlich Kernaussage + FAQ
+#   scripts/geo-audit.sh <URL>              # H1 + JSON-LD (alle Seitentypen)
+#   scripts/geo-audit.sh <URL> --article    # zusätzlich Kernaussage + FAQ
+#   scripts/geo-audit.sh <URL> --vergleich  # zusätzlich Tabelle,
+#                                           # Bereichshinweis, Methodik-Link,
+#                                           # sponsored-Kennzeichnung
 set -euo pipefail
 
 url="${1:?Verwendung: $0 <URL> [--article]}"
@@ -31,6 +34,13 @@ check "JSON-LD (@graph)" 'application/ld\+json'
 if [ "$mode" = "--article" ]; then
   check "Kernaussage-Box" 'class="article__summary"'
   check "FAQ-Sektion" 'aria-label="Häufige Fragen"'
+fi
+
+if [ "$mode" = "--vergleich" ]; then
+  check "Vergleichstabelle (statisch)" '<table class="compare__table"'
+  check "Bereichshinweis (Werbung)" 'class="zone-notice"'
+  check "Methodik-Link" 'Methodik v'
+  check "sponsored-Kennzeichnung" 'rel="sponsored'
 fi
 
 if [ "$fail" -ne 0 ]; then

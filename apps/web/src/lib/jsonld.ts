@@ -8,6 +8,7 @@ import {
   type PodcastEpisode,
   type User,
 } from './payload'
+import type { ComparisonResponse } from './vergleich'
 
 export type JsonLdNode = Record<string, unknown>
 
@@ -225,6 +226,44 @@ export const podcastEpisodeNodes = (
     },
   ]
 }
+
+// --- Vergleichsseite (Template 2.3): ItemList + Product + Review.
+// Bewusste Zurückhaltung laut Template: KEIN AggregateRating, KEIN
+// offers-Markup; ratingValue = total_score aus der Engine,
+// bestRating 100, Autor = Organization.
+export const comparisonNodes = (
+  comparison: Pick<ComparisonResponse, 'category' | 'products'>,
+  siteUrl: string,
+): JsonLdNode[] => [
+  {
+    '@type': 'ItemList',
+    name: `${comparison.category.name} im Vergleich`,
+    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+    numberOfItems: comparison.products.length,
+    itemListElement: comparison.products.map((product) => ({
+      '@type': 'ListItem',
+      position: product.rank,
+      item: {
+        '@type': 'Product',
+        name: product.name,
+        brand: { '@type': 'Brand', name: product.manufacturer },
+        ...(product.gtin ? { gtin13: product.gtin } : {}),
+        review: {
+          '@type': 'Review',
+          author: { '@id': `${siteUrl}/#org` },
+          datePublished: dateOnly(product.evaluatedAt),
+          reviewRating: {
+            '@type': 'Rating',
+            ratingValue: product.totalScore,
+            bestRating: 100,
+            worstRating: 0,
+          },
+          ...(product.summary ? { reviewBody: product.summary } : {}),
+        },
+      },
+    })),
+  },
+]
 
 export const buildGraph = (nodes: JsonLdNode[]): JsonLdNode => ({
   '@context': 'https://schema.org',

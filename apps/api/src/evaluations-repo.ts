@@ -35,12 +35,13 @@ export const insertEvaluation = async (
   result: EvaluationResult,
   evaluatedBy: string,
   evidence: unknown[] = [],
+  summary?: string,
 ): Promise<{ id: string; evaluatedAt: string }> => {
   const { rows } = await getPool().query(
     `insert into vergleich.product_evaluations
        (product_id, schema_id, scores, total_score, evaluated_by,
-        evidence, published)
-     values ($1, $2, $3::jsonb, $4, $5, $6::jsonb, false)
+        evidence, published, summary)
+     values ($1, $2, $3::jsonb, $4, $5, $6::jsonb, false, nullif($7, ''))
      returning id, evaluated_at`,
     [
       productId,
@@ -49,6 +50,7 @@ export const insertEvaluation = async (
       result.totalScore,
       evaluatedBy,
       JSON.stringify(evidence),
+      summary ?? '',
     ],
   )
   return { id: rows[0].id, evaluatedAt: rows[0].evaluated_at }

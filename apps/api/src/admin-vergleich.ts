@@ -290,6 +290,8 @@ export const registerAdminVergleich = (app: FastifyInstance): void => {
                   <input type="hidden" name="schema_id" value="${esc(schema.rows[0].id)}">
                   <table>${criteria.map(criterionInput).join('')}</table>
                   <p><input name="evaluated_by" placeholder="Bewertet von (E-Mail)" required size="32"></p>
+                  <p><label>Kurzfazit (1–2 Sätze, erscheint auf der Vergleichsseite):</label>
+                     <textarea name="summary"></textarea></p>
                   <p><label>Belege (JSON-Array, optional):</label>
                      <textarea name="evidence">[]</textarea></p>
                   <button type="submit" name="action" value="preview">Preview-Score</button>
@@ -352,6 +354,7 @@ export const registerAdminVergleich = (app: FastifyInstance): void => {
             result,
             b.evaluated_by,
             evidence,
+            b.summary,
           )
           return reply.redirect(`/admin/vergleich/produkt/${req.params.id}`, 303)
         }

@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest'
 import {
   articleNodes,
   buildGraph,
+  comparisonNodes,
   medicPersonNodes,
   podcastEpisodeNodes,
   siteNodes,
@@ -226,6 +227,90 @@ describe('JSON-LD (Template Teil 2)', () => {
     const page = unreviewed.find((n) => n['@type'] === 'MedicalWebPage')
     expect(page?.lastReviewed).toBeUndefined()
     expect(page?.reviewedBy).toBeUndefined()
+  })
+})
+
+describe('Vergleichsseite (Template 2.3)', () => {
+  const comparison = {
+    category: { slug: 'vitamin-d', name: 'Vitamin-D-Präparate', description: null },
+    products: [
+      {
+        id: 'p1',
+        slug: 'beispiel',
+        name: 'Beispiel D3+K2 Tropfen 1000 IE',
+        manufacturer: 'Beispiel GmbH',
+        gtin: '4012345678901',
+        attributes: {},
+        rank: 1,
+        totalScore: 86.5,
+        evaluatedAt: '2026-07-11T10:00:00.000Z',
+        summary: 'Solide Tropfen, nicht fein titrierbar.',
+        scores: {},
+        affiliateLinks: [],
+        price: null,
+      },
+    ],
+  }
+
+  const itemListSchema: JsonSchema = {
+    type: 'object',
+    required: ['name', 'itemListOrder', 'numberOfItems', 'itemListElement'],
+    properties: {
+      numberOfItems: { type: 'number' },
+      itemListElement: {
+        type: 'array',
+        minItems: 1,
+        items: {
+          type: 'object',
+          required: ['@type', 'position', 'item'],
+          properties: {
+            item: {
+              type: 'object',
+              required: ['@type', 'name', 'brand', 'review'],
+              properties: {
+                brand: { type: 'object', required: ['@type', 'name'] },
+                review: {
+                  type: 'object',
+                  required: ['@type', 'author', 'datePublished', 'reviewRating'],
+                  properties: {
+                    author: { type: 'object', required: ['@id'] },
+                    reviewRating: {
+                      type: 'object',
+                      required: ['@type', 'ratingValue', 'bestRating', 'worstRating'],
+                      properties: {
+                        bestRating: { const: 100 },
+                        worstRating: { const: 0 },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }
+
+  it('ItemList erfüllt die Pflichtfelder', () => {
+    const [node] = comparisonNodes(comparison, siteUrl)
+    expect(validate(itemListSchema, node)).toEqual([])
+  })
+
+  it('ratingValue = total_score aus der Engine, reviewBody = Kurzfazit', () => {
+    const [node] = comparisonNodes(comparison, siteUrl)
+    const item = (node?.itemListElement as { item: Record<string, unknown> }[])[0]
+      ?.item as { review: Record<string, unknown>; gtin13?: string }
+    expect((item.review.reviewRating as { ratingValue: number }).ratingValue).toBe(86.5)
+    expect(item.review.reviewBody).toBe('Solide Tropfen, nicht fein titrierbar.')
+    expect(item.gtin13).toBe('4012345678901')
+  })
+
+  it('bewusste Zurückhaltung: kein AggregateRating, kein offers', () => {
+    const [node] = comparisonNodes(comparison, siteUrl)
+    const json = JSON.stringify(node)
+    expect(json).not.toContain('AggregateRating')
+    expect(json).not.toContain('"offers"')
   })
 })
 
