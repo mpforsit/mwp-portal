@@ -559,3 +559,26 @@ Tabelle im DOM. Alle Workspaces grün (19+8+31+7).
 2.5; /methodik/[kategorie]/ in 2.6 — beide Links zeigen bis dahin
 ins Leere. Artefakt um summary-Spalte ergänzen (Maintainer).
 **Nächster Schritt:** 2.5 Affiliate-Redirects & Kennzeichnung.
+
+## 2026-07-11 — Schritt 2.5: Affiliate-Redirects & Kennzeichnung
+
+**Was:**
+- Migration 0003: `vergleich.affiliate_clicks` (id, link_id,
+  clicked_at, referrer_path) — bewusst keine Spalten für IP,
+  User-Agent o. Ä.; ein Test prüft die exakte Spaltenliste und
+  bricht, falls je Nutzerdaten-Spalten dazukommen.
+- API `/go/:linkId` (src/affiliate.ts): Lookup in affiliate_links,
+  302 auf die Ziel-URL; Klick-Insert davor (nur linkId + Zeitstempel
+  + Referrer-PFAD — referrerPath() schneidet Host, Query und Fragment
+  ab); Insert-Fehler blockieren den Redirect nie. Deaktivierte Links
+  → 410-HTML-Seite mit Hinweis und Link zum Vergleich; unbekannte/
+  ungültige IDs → 404.
+- Frontend-Kennzeichnung (rel="sponsored noopener", sichtbares
+  "Anzeige"-Label) war bereits Teil von 2.4 — die Buttons zeigen auf
+  /go/[linkId] und funktionieren jetzt.
+
+**Verifikation:** 6 neue Tests (Referrer-Pfad-Extraktion inkl.
+Query-Strip, 302+Klick-Zählung, Spaltenliste, 410, 404); API gesamt
+37 Tests grün, Lint/Typecheck grün. Smoke-Test gegen Dev-DB: 302 auf
+Ziel-URL, Klick mit Pfad (ohne Query) protokolliert.
+**Nächster Schritt:** 2.6 Methodik-Seiten.
