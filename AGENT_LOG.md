@@ -610,3 +610,29 @@ Punkteregeln ("bis 500 IE pro Einzeldosis: 10 Punkte") generiert;
 JSON-LD version/dateModified korrekt; geo-audit gegen beide Seiten
 grün. Alle Workspaces grün (20+8+37+7).
 **Nächster Schritt:** 2.7 Transparenz-Seite.
+
+## 2026-07-11 — Schritt 2.7: Transparenz-Seite
+
+**Was:**
+- CMS-Global `transparency-settings` (intro, affiliate, metalytic) —
+  Texte redaktionell pflegbar, Default-Texte nach der
+  Offenlegungs-Formel aus strategie-kontext.md ("MetaLytic gehört zum
+  selben Unternehmensverbund … und ja, wir verdienen daran";
+  Gesundheitsdaten-Garantie ausgesprochen). Seed persistiert.
+- API `/api/transparenz`: publiziert die
+  transparency_rank_vs_commission-View (je Kategorie: Produktanzahl,
+  Korrelation Rang/max. Provision) mit generatedAt.
+- Web `/transparenz/`: Global-Texte + Korrelations-Tabelle mit
+  Erklärtext (was der Wert zwischen −1 und +1 bedeutet, warum nahe 0/
+  negativ der Beleg ist, +1 ein sichtbares Alarmsignal wäre),
+  n=1-Hinweis solange corr null ist, Stand-Datum (Build-Zeitpunkt —
+  bei jedem Rebuild aktuell), Links zu Vergleich und Methodik.
+  Footer-Link /transparenz/ zeigt nicht mehr ins Leere; in
+  sitemap-portal aufgenommen.
+
+**Verifikation:** Build gegen CMS+API: alle Texte, Tabelle,
+Erklärtext, n=1-Hinweis und Stand-Datum im HTML; geo-audit grün.
+Alle Workspaces grün (20+8+37+7).
+**Nächster Schritt:** 2.8 Praxisfinder (letzter großer Baustein
+Phase 2; 2.9 entfällt — keine Statik-Vergleiche aus Phase 1
+vorhanden).

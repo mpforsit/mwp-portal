@@ -97,9 +97,11 @@ export interface Config {
   fallbackLocale: null;
   globals: {
     'newsletter-settings': NewsletterSetting;
+    'transparency-settings': TransparencySetting;
   };
   globalsSelect: {
     'newsletter-settings': NewsletterSettingsSelect<false> | NewsletterSettingsSelect<true>;
+    'transparency-settings': TransparencySettingsSelect<false> | TransparencySettingsSelect<true>;
   };
   locale: null;
   widgets: {
@@ -660,12 +662,36 @@ export interface NewsletterSetting {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transparency-settings".
+ */
+export interface TransparencySetting {
+  id: number;
+  intro: string;
+  affiliate: string;
+  metalytic: string;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "newsletter-settings_select".
  */
 export interface NewsletterSettingsSelect<T extends boolean = true> {
   heading?: T;
   intro?: T;
   datenschutzhinweis?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "transparency-settings_select".
+ */
+export interface TransparencySettingsSelect<T extends boolean = true> {
+  intro?: T;
+  affiliate?: T;
+  metalytic?: T;
   updatedAt?: T;
   createdAt?: T;
   globalType?: T;

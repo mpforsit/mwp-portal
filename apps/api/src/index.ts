@@ -5,6 +5,7 @@ import { registerAffiliateRoutes } from './affiliate.js'
 import { registerEvaluationRoutes } from './evaluations.js'
 import { registerMethodikPublic } from './methodik-public.js'
 import { registerNewsletterRoutes } from './newsletter.js'
+import { registerTransparenzPublic } from './transparenz-public.js'
 import { registerVergleichPublic } from './vergleich-public.js'
 
 const app = Fastify({ logger: true })
@@ -17,6 +18,7 @@ registerAdminVergleich(app)
 registerVergleichPublic(app)
 registerAffiliateRoutes(app)
 registerMethodikPublic(app)
+registerTransparenzPublic(app)
 
 const port = Number(process.env.PORT ?? 3001)
 

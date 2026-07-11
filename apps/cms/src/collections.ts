@@ -488,6 +488,51 @@ export const NewsletterSettings: GlobalConfig = {
 }
 
 // ------------------------------------------------------------------
+// Transparenz-Global: Texte der /transparenz/-Seite (Schritt 2.7).
+// Tonalität: Offenlegungs-Formel aus strategie-kontext.md — neutral
+// in der Bewertung, offen kommerziell in der Umsetzungsebene.
+// ------------------------------------------------------------------
+export const TransparencySettings: GlobalConfig = {
+  slug: 'transparency-settings',
+  access: { read: () => true, update: isEditorOrAdmin },
+  fields: [
+    {
+      name: 'intro',
+      type: 'textarea',
+      required: true,
+      defaultValue:
+        'Dieses Portal verdient Geld. Wie, womit und was das für die ' +
+        'Inhalte bedeutet, steht auf dieser Seite — vollständig und ' +
+        'laufend aktualisiert.',
+    },
+    {
+      name: 'affiliate',
+      type: 'textarea',
+      required: true,
+      defaultValue:
+        'In der Vergleichs-Zone verwenden wir Affiliate-Links: Kommt ein ' +
+        'Kauf über einen gekennzeichneten Link zustande, erhalten wir eine ' +
+        'Provision. Die Bewertung folgt einer dokumentierten, ' +
+        'versionierten Methodik und ist von der Vergütung unabhängig — ' +
+        'gelistet werden auch Anbieter ohne Partnerprogramm. Ob das ' +
+        'stimmt, muss niemand glauben: Die Korrelation zwischen Ranking ' +
+        'und Vergütung veröffentlichen wir unten als Zahl.',
+    },
+    {
+      name: 'metalytic',
+      type: 'textarea',
+      required: true,
+      defaultValue:
+        'MetaLytic (Bluttest-Kits) gehört zum selben Unternehmensverbund ' +
+        'wie dieses Portal. Wir empfehlen Messung vor Supplementierung, ' +
+        'weil die Evidenz es so sagt — und ja, wir verdienen daran. ' +
+        'Testergebnisse verbleiben vollständig bei MetaLytic und berühren ' +
+        'weder dieses Portal noch Newsletter oder Reichweitenmessung.',
+    },
+  ],
+}
+
+// ------------------------------------------------------------------
 // PodcastEpisodes: Verknüpfung Folge <-> Wissensartikel
 // ------------------------------------------------------------------
 export const PodcastEpisodes: CollectionConfig = {

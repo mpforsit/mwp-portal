@@ -401,6 +401,37 @@ const run = async (): Promise<void> => {
     console.log('angelegt: Newsletter-Global')
   }
 
+  // Transparenz-Global: Default-Texte persistieren
+  const transparency = await payload.findGlobal({
+    slug: 'transparency-settings',
+  })
+  if (!transparency.intro) {
+    await payload.updateGlobal({
+      slug: 'transparency-settings',
+      data: {
+        intro:
+          'Dieses Portal verdient Geld. Wie, womit und was das für die ' +
+          'Inhalte bedeutet, steht auf dieser Seite — vollständig und ' +
+          'laufend aktualisiert.',
+        affiliate:
+          'In der Vergleichs-Zone verwenden wir Affiliate-Links: Kommt ein ' +
+          'Kauf über einen gekennzeichneten Link zustande, erhalten wir eine ' +
+          'Provision. Die Bewertung folgt einer dokumentierten, ' +
+          'versionierten Methodik und ist von der Vergütung unabhängig — ' +
+          'gelistet werden auch Anbieter ohne Partnerprogramm. Ob das ' +
+          'stimmt, muss niemand glauben: Die Korrelation zwischen Ranking ' +
+          'und Vergütung veröffentlichen wir unten als Zahl.',
+        metalytic:
+          'MetaLytic (Bluttest-Kits) gehört zum selben Unternehmensverbund ' +
+          'wie dieses Portal. Wir empfehlen Messung vor Supplementierung, ' +
+          'weil die Evidenz es so sagt — und ja, wir verdienen daran. ' +
+          'Testergebnisse verbleiben vollständig bei MetaLytic und berühren ' +
+          'weder dieses Portal noch Newsletter oder Reichweitenmessung.',
+      },
+    })
+    console.log('angelegt: Transparenz-Global')
+  }
+
   console.log('Seed abgeschlossen.')
   process.exit(0)
 }

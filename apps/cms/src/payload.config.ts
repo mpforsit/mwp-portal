@@ -15,6 +15,7 @@ import {
   Medics,
   NewsletterSettings,
   PodcastEpisodes,
+  TransparencySettings,
   Users,
 } from './collections'
 
@@ -26,7 +27,7 @@ export default buildConfig({
     importMap: { baseDir: path.resolve(dirname) },
   },
   collections: [Users, Media, Medics, Categories, Articles, PodcastEpisodes],
-  globals: [NewsletterSettings],
+  globals: [NewsletterSettings, TransparencySettings],
   // Tabellen-Feature: Evidenz-Tabellen als echtes HTML-table
   // (Redaktions-Template Teil 1)
   editor: lexicalEditor({
