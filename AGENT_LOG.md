@@ -357,3 +357,39 @@ Typecheck über alle Workspaces grün.
 Bestätigungsseite (/newsletter/bestaetigt/ existiert noch nicht als
 Seite — bei 1.9/Launch ergänzen); echte Keys als Coolify-Secrets.
 **Nächster Schritt:** 1.8 Consent, Tracking, Zweit-Analytics.
+
+## 2026-07-11 — Schritt 1.8: Consent, Tracking, Zweit-Analytics
+
+**Was:**
+- `ConsentManager.astro` (eigene schlanke Lösung statt Klaro — Plan
+  lässt beides zu, so keine neue Dependency): Banner mit Kategorien
+  notwendig (fix an) / Statistik / Marketing; Auswahl in
+  localStorage (`portal-consent-v1`); Consent-Mode-v2-Defaults
+  (alles denied, wait_for_update) werden IMMER vor jedem Tag in den
+  dataLayer gepusht; sGTM (PUBLIC_SGTM_URL, Stape) lädt erst nach
+  Einwilligung und bei Reload automatisch, wenn Consent gespeichert;
+  Update-Signale analytics_storage/ad_* je nach Auswahl.
+- Plausible self-hosted (PUBLIC_PLAUSIBLE_SCRIPT_URL/_DOMAIN):
+  cookielos, lädt immer (rote Linie erlaubt cookielose
+  Basis-Analytics vor Consent).
+- Outbound-Shop-Klicks (PUBLIC_SHOP_HOSTS oder data-shop-link):
+  Event in beide Systeme (plausible() + dataLayer
+  shop_outbound_click).
+- Footer-Button "Datenschutz-Einstellungen" öffnet das Banner erneut
+  (Widerruf, CustomEvent portal:consent-open).
+- `/datenschutz/`-Platzhalterseite: Plausible als berechtigtes
+  Interesse dokumentiert, Consent-Dienste, Newsletter,
+  Gesundheitsdaten-Abschnitt — alle juristischen Stellen mit
+  "TODO ANWALT" markiert.
+
+**Verifikation (Browser, Playwright gegen Preview-Build):**
+(1) Ohne Consent: 0 GTM-/Google-Requests, Plausible-Request geht raus,
+Banner sichtbar. (2) "Alle akzeptieren": GTM-Request, Banner zu.
+(3) Reload: GTM lädt automatisch, Banner bleibt zu. (4) Klick auf
+Shop-Link erzeugt shop_outbound_click im dataLayer mit URL.
+(5) Footer-Button öffnet Banner erneut. Lint/Typecheck/Tests
+(16+9+7) grün.
+**Manuell offen:** Stape/sGTM-Container + GA4-Property einrichten,
+Plausible-Instanz deployen (Coolify), echte URLs als Envs; finale
+Datenschutzerklärung vom Anwalt.
+**Nächster Schritt:** 1.9 Technisches SEO/GEO-Finish.

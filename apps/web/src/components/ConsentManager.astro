@@ -1,0 +1,192 @@
+---
+// Consent & Tracking (Schritt 1.8) — eigene schlanke Lösung statt
+// Klaro (keine zusätzliche Dependency):
+// 1. Consent Mode v2: Default-Signale "denied" werden IMMER vor
+//    jedem Tag gesetzt; sGTM/GA4 lädt erst nach Einwilligung.
+// 2. Plausible (self-hosted, cookielos) läuft immer — berechtigtes
+//    Interesse, dokumentiert in /datenschutz/ (Anwalts-TODO).
+// 3. Outbound-Klicks auf Shop-Links gehen als Event in beide Systeme.
+// Rote Linie: kein Tracking vor Consent außer cookieloser
+// Basis-Analytics.
+const sgtmUrl = import.meta.env.PUBLIC_SGTM_URL as string | undefined
+const plausibleScriptUrl = import.meta.env.PUBLIC_PLAUSIBLE_SCRIPT_URL as
+  | string
+  | undefined
+const plausibleDomain = import.meta.env.PUBLIC_PLAUSIBLE_DOMAIN as
+  | string
+  | undefined
+const shopHosts = (import.meta.env.PUBLIC_SHOP_HOSTS as string | undefined) ?? ''
+---
+
+<div
+  class="consent"
+  id="consent-banner"
+  hidden
+  data-sgtm-url={sgtmUrl}
+  data-plausible-script={plausibleScriptUrl}
+  data-plausible-domain={plausibleDomain}
+  data-shop-hosts={shopHosts}
+  role="region"
+  aria-label="Datenschutz-Einstellungen"
+>
+  <div class="consent__inner">
+    <p class="consent__text">
+      Wir nutzen eine cookielose Reichweitenmessung (immer aktiv,
+      berechtigtes Interesse). Statistik- und Marketing-Dienste laden
+      nur mit deiner Einwilligung. Details in der
+      <a href="/datenschutz/">Datenschutzerklärung</a>.
+    </p>
+    <div class="consent__options">
+      <label class="consent__option">
+        <input type="checkbox" checked disabled /> Notwendig
+      </label>
+      <label class="consent__option">
+        <input type="checkbox" id="consent-statistik" /> Statistik
+      </label>
+      <label class="consent__option">
+        <input type="checkbox" id="consent-marketing" /> Marketing
+      </label>
+    </div>
+    <div class="consent__actions">
+      <button class="consent__button consent__button--primary" data-consent-action="all">
+        Alle akzeptieren
+      </button>
+      <button class="consent__button" data-consent-action="none">
+        Nur notwendige
+      </button>
+      <button class="consent__button" data-consent-action="save">
+        Auswahl speichern
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+  type Consent = { statistik: boolean; marketing: boolean; ts: string }
+
+  const STORAGE_KEY = 'portal-consent-v1'
+  const banner = document.getElementById('consent-banner')
+  if (banner) {
+    const { sgtmUrl, plausibleScript, plausibleDomain, shopHosts } =
+      banner.dataset
+
+    // --- Consent Mode v2: Default IMMER denied, vor jedem Tag ---
+    type DataLayer = { dataLayer?: unknown[]; plausible?: (...a: unknown[]) => void }
+    const w = window as unknown as DataLayer & Window
+    w.dataLayer = w.dataLayer ?? []
+    const gtag = (...args: unknown[]) => {
+      ;(w.dataLayer as unknown[]).push(args)
+    }
+    gtag('consent', 'default', {
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+      analytics_storage: 'denied',
+      wait_for_update: 500,
+    })
+
+    let gtmLoaded = false
+    const loadGtm = () => {
+      if (gtmLoaded || !sgtmUrl) return
+      gtmLoaded = true
+      ;(w.dataLayer as unknown[]).push({
+        'gtm.start': Date.now(),
+        event: 'gtm.js',
+      })
+      const s = document.createElement('script')
+      s.async = true
+      s.src = sgtmUrl
+      document.head.appendChild(s)
+    }
+
+    const applyConsent = (consent: Consent) => {
+      gtag('consent', 'update', {
+        analytics_storage: consent.statistik ? 'granted' : 'denied',
+        ad_storage: consent.marketing ? 'granted' : 'denied',
+        ad_user_data: consent.marketing ? 'granted' : 'denied',
+        ad_personalization: consent.marketing ? 'granted' : 'denied',
+      })
+      if (consent.statistik || consent.marketing) loadGtm()
+    }
+
+    const readConsent = (): Consent | null => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY)
+        return raw ? (JSON.parse(raw) as Consent) : null
+      } catch {
+        return null
+      }
+    }
+
+    const saveConsent = (statistik: boolean, marketing: boolean) => {
+      const consent: Consent = {
+        statistik,
+        marketing,
+        ts: new Date().toISOString(),
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(consent))
+      applyConsent(consent)
+      banner.hidden = true
+    }
+
+    const stored = readConsent()
+    if (stored) {
+      applyConsent(stored)
+    } else {
+      banner.hidden = false
+    }
+
+    const statistikBox =
+      document.querySelector<HTMLInputElement>('#consent-statistik')
+    const marketingBox =
+      document.querySelector<HTMLInputElement>('#consent-marketing')
+    banner.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement
+      const action = target.dataset.consentAction
+      if (action === 'all') saveConsent(true, true)
+      if (action === 'none') saveConsent(false, false)
+      if (action === 'save')
+        saveConsent(
+          statistikBox?.checked ?? false,
+          marketingBox?.checked ?? false,
+        )
+    })
+
+    // Footer-Link "Datenschutz-Einstellungen" öffnet das Banner erneut
+    document.addEventListener('portal:consent-open', () => {
+      const current = readConsent()
+      if (statistikBox) statistikBox.checked = current?.statistik ?? false
+      if (marketingBox) marketingBox.checked = current?.marketing ?? false
+      banner.hidden = false
+    })
+
+    // --- Plausible: cookielos, immer aktiv (berechtigtes Interesse) ---
+    if (plausibleScript && plausibleDomain) {
+      const s = document.createElement('script')
+      s.defer = true
+      s.src = plausibleScript
+      s.dataset.domain = plausibleDomain
+      document.head.appendChild(s)
+    }
+
+    // --- Outbound-Klicks auf Shop-Links: Event in beide Systeme ---
+    const hosts = (shopHosts ?? '')
+      .split(',')
+      .map((h) => h.trim())
+      .filter(Boolean)
+    document.addEventListener('click', (event) => {
+      const link = (event.target as HTMLElement).closest?.('a[href]')
+      if (!(link instanceof HTMLAnchorElement)) return
+      const isShopLink =
+        link.dataset.shopLink !== undefined ||
+        hosts.some((h) => link.hostname === h || link.hostname.endsWith(`.${h}`))
+      if (!isShopLink) return
+      const url = link.href
+      w.plausible?.('Outbound Shop Click', { props: { url } })
+      ;(w.dataLayer as unknown[]).push({
+        event: 'shop_outbound_click',
+        link_url: url,
+      })
+    })
+  }
+</script>

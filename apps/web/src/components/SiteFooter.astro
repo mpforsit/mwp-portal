@@ -18,6 +18,9 @@ const newsletterSettings = await fetchNewsletterSettings()
       <a class="site-footer__link" href="/transparenz/">Transparenz</a>
       <a class="site-footer__link" href="/impressum/">Impressum</a>
       <a class="site-footer__link" href="/datenschutz/">Datenschutz</a>
+      <button class="site-footer__link site-footer__consent" type="button">
+        Datenschutz-Einstellungen
+      </button>
     </nav>
     <p>
       © {year} · Inhalte ersetzen keine ärztliche Beratung. Wie wir
@@ -25,3 +28,11 @@ const newsletterSettings = await fetchNewsletterSettings()
     </p>
   </div>
 </footer>
+
+<script>
+  document
+    .querySelector('.site-footer__consent')
+    ?.addEventListener('click', () =>
+      document.dispatchEvent(new CustomEvent('portal:consent-open')),
+    )
+</script>
