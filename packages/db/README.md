@@ -1,9 +1,7 @@
 # @mwp/db
 
 SQL-Migrationen für Vergleichs-Engine und Praxisfinder plus einfacher
-Runner (`pnpm migrate`). Migrationen sind nummerierte .sql-Dateien in
-`migrations/`, laufen je in einer Transaktion und werden in
-`engine_meta.migrations` protokolliert; nach dem ersten Prod-Deploy nur
-additiv.
-
-Referenz-Spezifikation: `docs/artefakte/vergleichs-engine-schema.sql`.
+Runner (`pnpm migrate`, Protokoll in `engine_meta.migrations`, eine
+Transaktion pro Datei; nach dem ersten Prod-Deploy nur additiv).
+Idempotente Seeds liegen in `seeds/` (`pnpm seed`); Referenz-
+Spezifikation ist `docs/artefakte/vergleichs-engine-schema.sql`.

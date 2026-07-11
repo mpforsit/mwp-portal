@@ -1,6 +1,6 @@
-// CLI-Wrapper: pnpm migrate — führt alle Migrationen aus.
+// CLI-Wrapper: pnpm seed — spielt die idempotenten Seeds ein.
 import { fileURLToPath } from 'node:url'
-import { runMigrations } from '../src/migrate.js'
+import { runSeeds } from '../src/migrate.js'
 
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) {
@@ -8,9 +8,9 @@ if (!databaseUrl) {
   process.exit(1)
 }
 
-runMigrations(
+runSeeds(
   databaseUrl,
-  fileURLToPath(new URL('../migrations', import.meta.url)),
+  fileURLToPath(new URL('../seeds', import.meta.url)),
 ).catch((err) => {
   console.error(err)
   process.exit(1)
