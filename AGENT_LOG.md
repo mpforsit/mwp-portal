@@ -427,3 +427,57 @@ INDEXNOW_KEY generieren (z. B. openssl rand -hex 16) und in beide
 Envs setzen; og:image + Logo nachrüsten, sobald Branding steht.
 **Nächster Schritt:** 1.10/1.11 (Content-Produktion, Go-Live —
 überwiegend manuell) bzw. Phase 2 (Vergleichs-Engine).
+
+## 2026-07-11 — Schritt 2.1: Vergleichs-Engine-Schema als Migration
+
+**Was:** Kernschema aus dem Artefakt nach
+`packages/db/migrations/0001_vergleich_kernschema.sql` überführt
+(eigenes Postgres-Schema `vergleich`): alle Tabellen, Gewichtssummen-
+Trigger, Unveränderlichkeits-Trigger, partieller Unique-Index (ein
+aktives Schema/Kategorie), Views current_ranking +
+transparency_rank_vs_commission. Seed als idempotente Datei in
+`seeds/` (on conflict / where not exists). Runner in importierbare
+Lib refaktoriert (`src/migrate.ts`: runMigrations/runSeeds),
+`pnpm seed` neu. 8 Integrationstests (die vier geforderten Fälle +
+Idempotenz, 86.50-Seed, Ranking-Randfälle, Transparenz-View).
+**Abweichungen:** kein `create extension pgcrypto` —
+gen_random_uuid() ist ab PG13 Core (Extension bräuchte Superuser);
+Objekte im Schema `vergleich` statt public (Projekt-Kontext).
+**Verifikation:** Tests 8/8; migrate+seed zweimal gegen Dev-DB
+(zweiter Lauf No-op), current_ranking (86.50, Rang 1) und
+Transparenz-View geprüft.
+
+## 2026-07-11 — Schritt 2.2: Scoring-Service
+
+**Was:**
+- `apps/api/src/scoring.ts` (reine Logik): bands — erste Band mit
+  raw <= max greift, letzte Band ohne max ist Fallback; map —
+  direkter Lookup mit hilfreicher Fehlermeldung; direction wird
+  dokumentiert, aber nicht doppelt angewendet; total_score =
+  Summe(points/10 * weight), auf 2 Stellen gerundet; fehlende
+  Rohwerte werden namentlich gemeldet (ScoringError).
+- Endpoints (`src/evaluations.ts`): POST /internal/evaluations/preview
+  (berechnet, speichert nicht) und POST /internal/evaluations
+  (speichert unpubliziert; published bleibt Sache des
+  Pflege-Workflows 2.3). Kriterien kommen per schemaId aus der DB
+  (markierte Deserialisierungs-Grenze); Produkt-Kategorie muss zur
+  Schema-Kategorie passen. Guard über INTERNAL_API_TOKEN (Bearer),
+  ohne Token nur lokal offen. Gekapselter Pool in `src/db.ts`.
+- Input-Design: `raws` je Kriteriums-Key (+ optionale notes/evidence).
+  Bewusst explizit statt automatisch aus attributes abgeleitet: Die
+  Kriterien-Keys des Artefakts (micro_dosing, carrier, …) mappen
+  nicht 1:1 auf die attributes-Keys (ie_pro_einzeldosis,
+  traegeroel, …), und price_per_1000ie stammt gar nicht aus
+  attributes, sondern aus Preisstichproben. Das Mapping ist Aufgabe
+  des Pflege-Workflows (2.3).
+- Tests: Property-based (fast-check, laut Plan) für die Band-Logik
+  (erste-Band-Semantik, Fallback, Grenzwert raw === max), map-Fälle,
+  86.50-Reproduktion als Unit- UND als Endpoint-Test gegen die
+  Test-DB, Speichern unpubliziert inkl. Notes, Kategorie-Check,
+  Token-Guard. Neue Dependencies in api: pg (+types), fast-check
+  (im Plan-Prompt vorgegeben).
+
+**Verifikation:** 23 API-Tests grün (9 Newsletter + 14 neu); alle
+Workspaces: Lint/Typecheck grün, Tests 16+8+23+7.
+**Nächster Schritt:** 2.3 Pflege-Workflow (mit ADR zur
+Admin-UI-Entscheidung).

@@ -1,5 +1,6 @@
 import Fastify from 'fastify'
 
+import { registerEvaluationRoutes } from './evaluations.js'
 import { registerNewsletterRoutes } from './newsletter.js'
 
 const app = Fastify({ logger: true })
@@ -7,6 +8,7 @@ const app = Fastify({ logger: true })
 app.get('/health', async () => ({ status: 'ok' }))
 
 registerNewsletterRoutes(app)
+registerEvaluationRoutes(app)
 
 const port = Number(process.env.PORT ?? 3001)
 
