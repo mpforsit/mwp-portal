@@ -8,7 +8,8 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "import:praxen": "tsx scripts/import-praxen.ts"
   },
   "dependencies": {
     "fastify": "^5.4.0",

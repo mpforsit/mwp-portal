@@ -26,6 +26,7 @@ export default async function setup(): Promise<void> {
   const client = new pg.Client({ connectionString: testUrl })
   await client.connect()
   await client.query('drop schema if exists vergleich cascade')
+  await client.query('drop schema if exists praxen cascade')
   await client.query('drop schema if exists engine_meta cascade')
   await client.end()
 }

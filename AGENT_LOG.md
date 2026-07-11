@@ -636,3 +636,50 @@ Alle Workspaces grün (20+8+37+7).
 **Nächster Schritt:** 2.8 Praxisfinder (letzter großer Baustein
 Phase 2; 2.9 entfällt — keine Statik-Vergleiche aus Phase 1
 vorhanden).
+
+## 2026-07-11 — Schritt 2.8: Praxisfinder
+
+**Was:**
+- Migration 0004: Schema `praxen` mit practices (PostGIS-Point als
+  geography, Stammdaten, services-Array, partner-Flag, Website,
+  Telefon, Öffnungszeiten; GIST-Index auf location, GIN auf
+  services) und geocode_cache (PLZ → lat/lon). postgis-Extension
+  braucht einmalig Superuser (postgis/postgis-Image bringt sie mit;
+  lokal in template1 angelegt). Demo-Seed: 3 Praxen um München/
+  Augsburg — bewusst so, dass die NÄCHSTE Praxis keine Partnerpraxis
+  ist.
+- API GET /api/praxen?plz=&leistung=&radius=: PLZ-Geocoding über
+  Nominatim (identifizierender User-Agent, NOMINATIM_URL als Env)
+  mit Cache-Tabelle; ST_DWithin-Umkreissuche (Default 50 km, max
+  200), Sortierung AUSSCHLIESSLICH nach ST_Distance; partner nur als
+  Kennzeichen im Response; Praxis-Koordinaten für die Karte im
+  Response; CORS-Header.
+- CSV-Import `pnpm import:praxen <datei.csv>` (Semikolon-Format mit
+  fester Kopfzeile, Validierung je Zeile).
+- Web /messen/praxisfinder/: Suchformular (PLZ + Leistungs-Select) als
+  interaktive Insel gegen die API; Ergebnisliste mit sichtbarem
+  "Partnerpraxis"-Badge und Distanz; MapLibre-Karte (neue Dependency
+  maplibre-gl, im Plan vorgesehen) mit OSM-Raster-Tiles als
+  Click-to-Load — vor dem Klick kein Request an OSM (Datenschutz-
+  Muster wie beim Podigee-Player); Marker mit Popups an den
+  Praxis-Positionen. Verlinkung von /messen/, Sitemap-Eintrag.
+  Env-Umbenennung: PUBLIC_NEWSLETTER_API_URL → PUBLIC_API_URL
+  (Newsletter, /go, Praxisfinder nutzen dieselbe API).
+- eslint: no-unused-vars mit _-Präfix-Ausnahme (Mock-Signaturen).
+
+**Verifikation:** 6 neue API-Tests, darunter der Rote-Linie-Wächter:
+Distanzen streng aufsteigend, die nächste (Nicht-Partner-)Praxis vor
+der Partnerpraxis; Leistungs-Filter, Radius-Grenze, Geocoding-Cache
+(kein externer Request bei Hit, Cache-Fill bei Miss, gemockt).
+Browser-Test gegen Preview-Build: kein OSM-Request vor Interaktion,
+Ergebnisliste in Distanz-Reihenfolge mit sichtbarem Partner-Badge,
+MapLibre-Canvas initialisiert, Tile-Requests erst nach Klick. Alle
+Workspaces grün (20+8+43+7).
+**Vorbehalte:** Leistungs-Tags im Frontend-Select noch statisch
+(Seed-Tags; distinct-Endpoint, wenn der Bestand wächst); echte
+Praxis-Stammdaten kommen per CSV-Import; Nominatim-Rate-Limits
+beachten (Cache mildert; bei Massen-Geocoding Batch mit Pausen).
+**Phase 2 damit komplett** (2.9 entfällt: keine Statik-Vergleiche
+aus Phase 1 zu migrieren). Nächster Meilenstein: Phase 3
+(Mess-Loop, Datenpublikationen, Partner-Features) bzw. die
+manuellen Punkte aus Phase 0/1 (Hetzner/Coolify, Domain, Accounts).

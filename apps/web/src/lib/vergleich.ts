@@ -13,7 +13,7 @@ const apiUrl = (
 ).replace(/\/$/, '')
 
 export const API_PUBLIC_URL = (
-  (import.meta.env.PUBLIC_NEWSLETTER_API_URL as string | undefined) ??
+  (import.meta.env.PUBLIC_API_URL as string | undefined) ??
   'http://localhost:3001'
 ).replace(/\/$/, '')
 

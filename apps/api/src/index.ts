@@ -5,6 +5,7 @@ import { registerAffiliateRoutes } from './affiliate.js'
 import { registerEvaluationRoutes } from './evaluations.js'
 import { registerMethodikPublic } from './methodik-public.js'
 import { registerNewsletterRoutes } from './newsletter.js'
+import { registerPraxenRoutes } from './praxen.js'
 import { registerTransparenzPublic } from './transparenz-public.js'
 import { registerVergleichPublic } from './vergleich-public.js'
 
@@ -19,6 +20,7 @@ registerVergleichPublic(app)
 registerAffiliateRoutes(app)
 registerMethodikPublic(app)
 registerTransparenzPublic(app)
+registerPraxenRoutes(app)
 
 const port = Number(process.env.PORT ?? 3001)
 

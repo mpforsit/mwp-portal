@@ -18,6 +18,11 @@ export default tseslint.config(
       // Kein any ohne Begründung (CLAUDE.md); bewusste Ausnahmen per
       // eslint-disable-next-line mit Kommentar.
       '@typescript-eslint/no-explicit-any': 'error',
+      // _-Präfix = bewusst ungenutzt (z. B. Mock-Signaturen)
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
+      ],
     },
   },
 )

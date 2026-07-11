@@ -638,3 +638,91 @@ th {
   margin: 0;
   padding-left: var(--space-4);
 }
+
+/* --- Praxisfinder -------------------------------------------------------- */
+
+.finder {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+  margin-block: var(--space-5);
+  max-width: var(--content-width);
+}
+
+.finder__label {
+  display: block;
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.finder__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.finder__input,
+.finder__select {
+  font: inherit;
+  color: inherit;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-3);
+}
+
+.finder__submit {
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-surface);
+  background: var(--color-accent);
+  border: none;
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.finder__status {
+  min-height: 1.5em;
+  margin: var(--space-3) 0 0;
+  font-size: var(--text-sm);
+}
+
+.finder-map__load {
+  font: inherit;
+  font-weight: 600;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+}
+
+.finder-map__canvas {
+  height: 420px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  margin-block: var(--space-4);
+}
+
+.finder-results {
+  list-style: none;
+  padding: 0;
+  max-width: var(--content-width);
+}
+
+.finder-result {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-4) var(--space-5);
+  margin-bottom: var(--space-3);
+}
+
+.finder-result__name {
+  margin: 0 0 var(--space-1);
+  font-size: var(--text-lg);
+}
