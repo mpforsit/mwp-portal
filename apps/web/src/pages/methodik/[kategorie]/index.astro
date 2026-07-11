@@ -1,0 +1,43 @@
+---
+// Aktive Methodik-Version (Schritt 2.6)
+import MethodologyView from '../../../components/MethodologyView.astro'
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { methodologyNodes } from '../../../lib/jsonld'
+import { fetchComparisonCategories } from '../../../lib/vergleich'
+import { fetchMethodology, type MethodologyResponse } from '../../../lib/methodik'
+import { SITE_URL } from '../../../lib/site'
+
+export async function getStaticPaths() {
+  const categories = await fetchComparisonCategories()
+  const methodologies = await Promise.all(
+    categories.map((c) => fetchMethodology(c.slug)),
+  )
+  return methodologies.map((methodology) => ({
+    params: { kategorie: methodology.category.slug },
+    props: { methodology },
+  }))
+}
+
+interface Props {
+  methodology: MethodologyResponse
+}
+
+const { methodology } = Astro.props
+const active = methodology.versions.find((v) => v.status === 'active')
+if (!active) throw new Error('Keine aktive Methodik-Version.')
+const pagePath = `/methodik/${methodology.category.slug}/`
+---
+
+<BaseLayout
+  title={`So bewerten wir ${methodology.category.name} — Methodik v${active.version}`}
+  description={`Kriterien, Gewichte und Punktevergabe für ${methodology.category.name}: versioniert, dokumentiert, unabhängig von Vergütungen.`}
+  activeZone="vergleich"
+  jsonLdNodes={methodologyNodes(methodology.category, active, SITE_URL, pagePath)}
+>
+  <MethodologyView
+    categoryName={methodology.category.name}
+    categorySlug={methodology.category.slug}
+    version={active}
+    allVersions={methodology.versions.map((v) => v.version)}
+  />
+</BaseLayout>

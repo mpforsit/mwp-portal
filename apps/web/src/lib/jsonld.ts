@@ -265,6 +265,29 @@ export const comparisonNodes = (
   },
 ]
 
+// --- Methodik-Seite (Template 2.4): Article-Markup, dateModified =
+// activated_at der Schema-Version — nie Build-Zeitpunkt ------------
+export const methodologyNodes = (
+  category: { slug: string; name: string },
+  version: {
+    version: number
+    activatedAt: string | null
+    createdAt: string
+  },
+  siteUrl: string,
+  pagePath: string,
+): JsonLdNode[] => [
+  {
+    '@type': 'Article',
+    headline: `So bewerten wir ${category.name} (Methodik v${version.version})`,
+    version: `v${version.version}`,
+    publisher: { '@id': `${siteUrl}/#org` },
+    datePublished: dateOnly(version.activatedAt ?? version.createdAt),
+    dateModified: dateOnly(version.activatedAt ?? version.createdAt),
+    mainEntityOfPage: { '@id': `${siteUrl}${pagePath}#page` },
+  },
+]
+
 export const buildGraph = (nodes: JsonLdNode[]): JsonLdNode => ({
   '@context': 'https://schema.org',
   '@graph': nodes,

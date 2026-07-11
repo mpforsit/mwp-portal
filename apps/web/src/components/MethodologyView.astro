@@ -1,0 +1,92 @@
+---
+// Gemeinsame Ansicht für aktive und archivierte Methodik-Versionen
+// (Schritt 2.6): Versionshinweis, methodology_md als Markdown,
+// Kriterientabelle automatisch aus dem criteria-JSONB.
+import { formatDate } from '../lib/payload'
+import {
+  directionLabel,
+  renderMarkdown,
+  scoringRules,
+  type MethodologyVersion,
+} from '../lib/methodik'
+
+interface Props {
+  categoryName: string
+  categorySlug: string
+  version: MethodologyVersion
+  allVersions: number[]
+}
+
+const { categoryName, categorySlug, version, allVersions } = Astro.props
+const html = await renderMarkdown(version.methodologyMd)
+---
+
+<article class="article">
+  <h1>So bewerten wir {categoryName}</h1>
+  <p class="article__meta">
+    <span class="badge">Methodik v{version.version}</span>
+    <span class="badge">
+      {version.status === 'active' ? 'aktuelle Version' : 'Archiv'}
+    </span>
+    {
+      version.activatedAt &&
+        ` Aktiv seit ${formatDate(version.activatedAt)}.`
+    }
+    {version.status === 'retired' && (
+      <>
+        {' '}Diese Version ist archiviert — die
+        <a href={`/methodik/${categorySlug}/`}> aktuelle Methodik</a> gilt.
+      </>
+    )}
+  </p>
+
+  <div set:html={html} />
+
+  <h2>Kriterien und Gewichte (v{version.version})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Kriterium</th>
+        <th>Gewicht</th>
+        <th>Richtung</th>
+        <th>Punktevergabe</th>
+      </tr>
+    </thead>
+    <tbody>
+      {
+        version.criteria.map((criterion) => (
+          <tr>
+            <td>
+              {criterion.label ?? criterion.key}
+              {criterion.unit && <div class="muted">{criterion.unit}</div>}
+            </td>
+            <td>{criterion.weight}</td>
+            <td>{directionLabel(criterion.direction) ?? '—'}</td>
+            <td>
+              <ul class="rules">
+                {scoringRules(criterion).map((rule) => (
+                  <li>{rule}</li>
+                ))}
+              </ul>
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+
+  {
+    allVersions.length > 1 && (
+      <p class="muted">
+        Alle Versionen:{' '}
+        {allVersions.map((v, i) => (
+          <>
+            {i > 0 && ' · '}
+            <a href={`/methodik/${categorySlug}/v${v}/`}>v{v}</a>
+          </>
+        ))}
+        {' '}— alte Versionen bleiben als Beleg erreichbar.
+      </p>
+    )
+  }
+</article>

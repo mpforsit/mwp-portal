@@ -1,0 +1,39 @@
+---
+// Übersicht "So testen wir" (Footer-Link seit 1.2)
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { fetchComparisonCategories } from '../../lib/vergleich'
+
+const categories = await fetchComparisonCategories()
+---
+
+<BaseLayout
+  title="So testen wir — Methodik"
+  description="Wie die Produktvergleiche dieses Portals entstehen: dokumentierte Kriterien mit festen Gewichten, versioniert und unabhängig von Vergütungen."
+>
+  <h1>So testen wir</h1>
+  <p>
+    Jede Vergleichskategorie hat eine dokumentierte Bewertungs-Methodik:
+    feste Kriterien mit offengelegten Gewichten und Punkteregeln. Die
+    Methodik ist versioniert — Änderungen erzeugen eine neue Version,
+    alte Versionen bleiben erreichbar. Affiliate-Vergütungen fließen
+    nicht in die Bewertung ein; die Korrelation zwischen Ranking und
+    Vergütung veröffentlichen wir auf der
+    <a href="/transparenz/"> Transparenz-Seite</a>.
+  </p>
+  {
+    categories.length === 0 ? (
+      <p>Die erste Methodik erscheint mit dem ersten Vergleich.</p>
+    ) : (
+      <ul class="card-list">
+        {categories.map((category) => (
+          <li class="card">
+            <h2 class="card__title">
+              <a href={`/methodik/${category.slug}/`}>{category.name}</a>
+            </h2>
+            <p>Kriterien, Gewichte und Punktevergabe</p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</BaseLayout>

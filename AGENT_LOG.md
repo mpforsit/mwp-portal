@@ -582,3 +582,31 @@ Query-Strip, 302+Klick-Zählung, Spaltenliste, 410, 404); API gesamt
 37 Tests grün, Lint/Typecheck grün. Smoke-Test gegen Dev-DB: 302 auf
 Ziel-URL, Klick mit Pfad (ohne Query) protokolliert.
 **Nächster Schritt:** 2.6 Methodik-Seiten.
+
+## 2026-07-11 — Schritt 2.6: Methodik-Seiten
+
+**Was:**
+- API: `/api/methodik/:slug` (methodik-public.ts) — alle
+  active/retired-Versionen (Drafts nie öffentlich) mit
+  methodology_md, criteria, activated_at. Gleiche Quelle wie das
+  Scoring: Doku und Realität können nicht auseinanderlaufen.
+- Web: `/methodik/` (Übersicht "So testen wir", Footer-Link aus 1.2
+  zeigt nicht mehr ins Leere), `/methodik/[kategorie]/` (aktive
+  Version) und `/methodik/[kategorie]/v[n]/` (Archiv — alte
+  Versionen bleiben als Beweiskette erreichbar). Gemeinsame
+  MethodologyView-Komponente: methodology_md als Markdown
+  (@astrojs/markdown-remark — Astros eigene Pipeline, bereits
+  transitive Dependency, jetzt explizit), Kriterientabelle
+  automatisch aus dem criteria-JSONB (Label, Gewicht, Richtung,
+  Punkteregeln aus bands/map lesbar formatiert), Versions-Badges
+  und Archiv-Hinweis mit Link zur aktuellen Version.
+- JSON-LD: Article mit version-Angabe und dateModified =
+  activated_at der Schema-Version (nie Build-Zeitpunkt) — Test.
+- Methodik-Seiten in sitemap-vergleich.xml.
+
+**Verifikation:** Build gegen API: aktive Seite + v1-Archiv gebaut;
+Markdown-H2 aus methodology_md im HTML; Kriterientabelle mit
+Punkteregeln ("bis 500 IE pro Einzeldosis: 10 Punkte") generiert;
+JSON-LD version/dateModified korrekt; geo-audit gegen beide Seiten
+grün. Alle Workspaces grün (20+8+37+7).
+**Nächster Schritt:** 2.7 Transparenz-Seite.

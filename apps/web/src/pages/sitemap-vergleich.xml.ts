@@ -7,7 +7,9 @@ export const GET: APIRoute = async () => {
   return xmlResponse(
     urlsetXml([
       { loc: abs('/vergleich/') },
+      { loc: abs('/methodik/') },
       ...categories.map((c) => ({ loc: abs(`/vergleich/${c.slug}/`) })),
+      ...categories.map((c) => ({ loc: abs(`/methodik/${c.slug}/`) })),
     ]),
   )
 }

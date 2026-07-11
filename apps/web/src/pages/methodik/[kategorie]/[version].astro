@@ -1,0 +1,52 @@
+---
+// Archivierte Methodik-Versionen (Schritt 2.6): /methodik/[kat]/v[n]/
+// Alte Versionen bleiben als Beweiskette erreichbar (Template 2.4).
+import MethodologyView from '../../../components/MethodologyView.astro'
+import BaseLayout from '../../../layouts/BaseLayout.astro'
+import { methodologyNodes } from '../../../lib/jsonld'
+import { fetchComparisonCategories } from '../../../lib/vergleich'
+import {
+  fetchMethodology,
+  type MethodologyResponse,
+  type MethodologyVersion,
+} from '../../../lib/methodik'
+import { SITE_URL } from '../../../lib/site'
+
+export async function getStaticPaths() {
+  const categories = await fetchComparisonCategories()
+  const methodologies = await Promise.all(
+    categories.map((c) => fetchMethodology(c.slug)),
+  )
+  return methodologies.flatMap((methodology) =>
+    methodology.versions.map((version) => ({
+      params: {
+        kategorie: methodology.category.slug,
+        version: `v${version.version}`,
+      },
+      props: { methodology, version },
+    })),
+  )
+}
+
+interface Props {
+  methodology: MethodologyResponse
+  version: MethodologyVersion
+}
+
+const { methodology, version } = Astro.props
+const pagePath = `/methodik/${methodology.category.slug}/v${version.version}/`
+---
+
+<BaseLayout
+  title={`Methodik v${version.version}: ${methodology.category.name}`}
+  description={`Archivierte Bewertungs-Methodik v${version.version} für ${methodology.category.name} — Kriterien, Gewichte und Punktevergabe.`}
+  activeZone="vergleich"
+  jsonLdNodes={methodologyNodes(methodology.category, version, SITE_URL, pagePath)}
+>
+  <MethodologyView
+    categoryName={methodology.category.name}
+    categorySlug={methodology.category.slug}
+    version={version}
+    allVersions={methodology.versions.map((v) => v.version)}
+  />
+</BaseLayout>

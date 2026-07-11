@@ -7,6 +7,7 @@ import {
   buildGraph,
   comparisonNodes,
   medicPersonNodes,
+  methodologyNodes,
   podcastEpisodeNodes,
   siteNodes,
   teamPersonNodes,
@@ -311,6 +312,31 @@ describe('Vergleichsseite (Template 2.3)', () => {
     const json = JSON.stringify(node)
     expect(json).not.toContain('AggregateRating')
     expect(json).not.toContain('"offers"')
+  })
+})
+
+describe('Methodik-Seite (Template 2.4)', () => {
+  it('Article-Knoten mit dateModified = activated_at, nie Build-Zeitpunkt', () => {
+    const [node] = methodologyNodes(
+      { slug: 'vitamin-d', name: 'Vitamin-D-Präparate' },
+      {
+        version: 1,
+        activatedAt: '2026-07-10T12:00:00.000Z',
+        createdAt: '2026-07-01T12:00:00.000Z',
+      },
+      siteUrl,
+      '/methodik/vitamin-d/',
+    )
+    const schema: JsonSchema = {
+      type: 'object',
+      required: ['headline', 'version', 'publisher', 'datePublished', 'dateModified', 'mainEntityOfPage'],
+      properties: {
+        publisher: { type: 'object', required: ['@id'] },
+        version: { const: 'v1' },
+        dateModified: { const: '2026-07-10' },
+      },
+    }
+    expect(validate(schema, node)).toEqual([])
   })
 })
 
