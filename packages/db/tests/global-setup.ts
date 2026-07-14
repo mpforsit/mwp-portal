@@ -19,7 +19,14 @@ export default async function setup(): Promise<void> {
     [dbName],
   )
   if (!exists.rowCount) {
-    await admin.query(`create database "${dbName}"`)
+    try {
+      await admin.query(`create database "${dbName}"`)
+    } catch (err) {
+      // 42P04/23505: parallele Global-Setups haben die DB gerade
+      // angelegt — dann ist alles gut
+      const code = (err as { code?: string }).code
+      if (code !== '42P04' && code !== '23505') throw err
+    }
   }
   await admin.end()
 

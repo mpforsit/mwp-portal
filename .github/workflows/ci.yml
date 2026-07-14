@@ -39,7 +39,7 @@ jobs:
 
       - run: pnpm -r lint
 
-      - run: pnpm -r test
+      - run: pnpm -r --workspace-concurrency=1 test
 
   deploy-staging:
     # Coolify deployt den main-Branch; der Webhook stößt das Deploy an.
