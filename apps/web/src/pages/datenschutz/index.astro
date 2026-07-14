@@ -1,0 +1,63 @@
+---
+// Platzhalter-Datenschutzerklärung (Schritt 1.8). Die technisch
+// relevanten Abschnitte (cookielose Analytics als berechtigtes
+// Interesse, Consent-Dienste, Newsletter) sind vorstrukturiert;
+// der finale Text kommt vom Anwalt.
+import BaseLayout from '../../layouts/BaseLayout.astro'
+---
+
+<BaseLayout
+  title="Datenschutzerklärung"
+  description="Datenschutzerklärung des Portals: welche Daten wir verarbeiten, auf welcher Grundlage und welche Wahlmöglichkeiten es gibt."
+>
+  <article class="article">
+    <h1>Datenschutzerklärung</h1>
+    <p class="zone-notice">
+      TODO ANWALT: Dieser Text ist ein technischer Platzhalter aus der
+      Entwicklung. Vollständige Datenschutzerklärung (Verantwortlicher,
+      Rechtsgrundlagen im Detail, Betroffenenrechte, Auftragsverarbeiter,
+      Speicherfristen) vor Go-Live juristisch erstellen und prüfen lassen.
+    </p>
+
+    <h2>Reichweitenmessung ohne Cookies (immer aktiv)</h2>
+    <p>
+      Wir setzen eine selbst gehostete, cookielose Reichweitenmessung
+      (Plausible) ein. Dabei werden keine Cookies gesetzt, keine
+      personenbezogenen Profile gebildet und keine Daten an Dritte
+      übertragen; IP-Adressen werden nicht gespeichert.
+      Rechtsgrundlage: berechtigtes Interesse (Art. 6 Abs. 1 lit. f
+      DSGVO) an einer datensparsamen Messung der Portalnutzung.
+      <strong>
+        TODO ANWALT: Interessenabwägung dokumentieren und Formulierung
+        prüfen.
+      </strong>
+    </p>
+
+    <h2>Statistik- und Marketing-Dienste (nur mit Einwilligung)</h2>
+    <p>
+      Google Analytics 4 (über Server-Side Tagging) und Marketing-Dienste
+      laden ausschließlich nach Einwilligung über die
+      Datenschutz-Einstellungen (Consent Mode v2). Die Einwilligung ist
+      jederzeit über den Link „Datenschutz-Einstellungen" im Footer
+      widerrufbar.
+      <strong>TODO ANWALT: Dienstliste und Empfänger ergänzen.</strong>
+    </p>
+
+    <h2>Newsletter</h2>
+    <p>
+      Anmeldung mit Double-Opt-in über Brevo. Gespeichert werden die
+      E-Mail-Adresse und das Themeninteresse der Seite, über die die
+      Anmeldung erfolgte — keine weiteren Daten. Abmeldung jederzeit
+      über den Link in jeder E-Mail.
+      <strong>TODO ANWALT: Abschnitt Brevo/AVV prüfen.</strong>
+    </p>
+
+    <h2>Gesundheitsdaten</h2>
+    <p>
+      Dieses Portal verarbeitet keine Gesundheitsmesswerte. Ergebnisse
+      von Test-Kits verbleiben vollständig beim jeweiligen Anbieter und
+      berühren weder dieses Portal noch Newsletter oder
+      Reichweitenmessung.
+    </p>
+  </article>
+</BaseLayout>

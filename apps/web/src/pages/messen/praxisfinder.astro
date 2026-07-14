@@ -1,0 +1,187 @@
+---
+// Praxisfinder (Schritt 2.8): PLZ-Suche gegen die API, Liste + Karte
+// (MapLibre + OSM, lädt erst nach Klick — vorher kein Request an
+// Dritte). Partnerpraxen sind gekennzeichnet, aber nie bevorzugt:
+// die Sortierung ist rein distanzbasiert (rote Linie, serverseitig
+// getestet). Suche ist naturgemäß eine interaktive Insel.
+import BaseLayout from '../../layouts/BaseLayout.astro'
+
+const apiUrl = (
+  (import.meta.env.PUBLIC_API_URL as string | undefined) ??
+  'http://localhost:3001'
+).replace(/\/$/, '')
+
+// Leistungs-Tags der ersten Datenlieferung; wird dynamisch, sobald
+// der Bestand wächst (TODO: distinct-Endpoint)
+const services = [
+  { value: '', label: 'Alle Leistungen' },
+  { value: 'vitamin-d-diagnostik', label: 'Vitamin-D-Diagnostik' },
+  { value: 'omega-3-index', label: 'Omega-3-Index' },
+  { value: 'blutbild', label: 'Blutbild' },
+]
+---
+
+<BaseLayout
+  title="Praxisfinder — Praxen für Labordiagnostik finden"
+  description="Praxen und Labore in der Nähe finden: offene Suche nach Postleitzahl und Leistung, sortiert nach Entfernung. Partnerpraxen sind gekennzeichnet."
+  activeZone="messen"
+>
+  <h1>Praxisfinder</h1>
+  <p>
+    Für die ärztliche Abklärung eines Werts oder eine venöse Abnahme
+    statt Selbsttest: Praxen und Labore in der Nähe, sortiert nach
+    Entfernung. Gelistet werden auch Praxen außerhalb unseres
+    Netzwerks; Partnerpraxen sind gekennzeichnet, werden aber in der
+    Reihenfolge nicht bevorzugt.
+  </p>
+
+  <form class="finder" id="finder-form" data-api={apiUrl}>
+    <label class="finder__label" for="finder-plz">Postleitzahl</label>
+    <div class="finder__row">
+      <input
+        class="finder__input"
+        id="finder-plz"
+        name="plz"
+        inputmode="numeric"
+        pattern="[0-9]{5}"
+        maxlength="5"
+        placeholder="z. B. 80331"
+        required
+      />
+      <select class="finder__select" name="leistung" aria-label="Leistung">
+        {services.map((s) => <option value={s.value}>{s.label}</option>)}
+      </select>
+      <button class="finder__submit" type="submit">Suchen</button>
+    </div>
+    <p class="finder__status" role="status" aria-live="polite"></p>
+  </form>
+  <noscript>
+    <p class="zone-notice">
+      Die Suche benötigt JavaScript. Alternativ hilft die kassenärztliche
+      Arztsuche der KBV unter arztsuche.116117.de weiter.
+    </p>
+  </noscript>
+
+  <div class="finder-map" id="finder-map-wrap" hidden>
+    <button class="finder-map__load" id="finder-map-load" type="button">
+      Karte anzeigen
+    </button>
+    <p class="muted">
+      Die Karte lädt Kartenkacheln von OpenStreetMap — erst nach Klick
+      werden Daten an OpenStreetMap übertragen.
+    </p>
+    <div class="finder-map__canvas" id="finder-map" hidden></div>
+  </div>
+
+  <ol class="finder-results" id="finder-results"></ol>
+</BaseLayout>
+
+<script>
+  import type { PraxenResponse } from '../../../../api/src/praxen'
+
+  const form = document.getElementById('finder-form') as HTMLFormElement
+  const status = form.querySelector('.finder__status') as HTMLElement
+  const results = document.getElementById('finder-results') as HTMLOListElement
+  const mapWrap = document.getElementById('finder-map-wrap') as HTMLElement
+  const mapLoadButton = document.getElementById('finder-map-load') as HTMLButtonElement
+  const mapCanvas = document.getElementById('finder-map') as HTMLElement
+
+  let lastResponse: PraxenResponse | null = null
+  // MapLibre wird erst nach Klick geladen (kein Third-Party-Request vorher)
+  let map: import('maplibre-gl').Map | null = null
+  let markers: import('maplibre-gl').Marker[] = []
+  let maplibre: typeof import('maplibre-gl') | null = null
+
+  const esc = (v: unknown) =>
+    String(v ?? '').replace(/[&<>"]/g, (c) =>
+      c === '&' ? '&amp;' : c === '<' ? '&lt;' : c === '>' ? '&gt;' : '&quot;',
+    )
+
+  const renderList = (data: PraxenResponse) => {
+    results.innerHTML = data.practices
+      .map(
+        (p) => `<li class="finder-result">
+          <h2 class="finder-result__name">${esc(p.name)}
+            ${p.partner ? '<span class="badge">Partnerpraxis</span>' : ''}
+          </h2>
+          <p class="muted">${esc(p.street ?? '')}, ${esc(p.zip)} ${esc(p.city)}
+            · ${p.distanceKm.toLocaleString('de-DE')} km entfernt</p>
+          <p>${p.services.map((s) => `<span class="badge">${esc(s)}</span>`).join(' ')}</p>
+          ${p.openingHours ? `<p class="muted">${esc(p.openingHours)}</p>` : ''}
+          ${p.website ? `<p><a href="${esc(p.website)}" rel="noopener">Website</a></p>` : ''}
+        </li>`,
+      )
+      .join('')
+  }
+
+  const renderMarkers = (data: PraxenResponse) => {
+    if (!map || !maplibre) return
+    markers.forEach((m) => m.remove())
+    markers = data.practices.map((p) =>
+      new maplibre!.Marker()
+        .setLngLat([p.lon, p.lat])
+        .setPopup(
+          new maplibre!.Popup().setHTML(
+            `<strong>${esc(p.name)}</strong>${p.partner ? ' (Partnerpraxis)' : ''}<br>${esc(p.city)}`,
+          ),
+        )
+        .addTo(map!),
+    )
+    map.setCenter([data.origin.lon, data.origin.lat])
+    map.setZoom(11)
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault()
+    const formData = new FormData(form)
+    const plz = String(formData.get('plz') ?? '')
+    const leistung = String(formData.get('leistung') ?? '')
+    status.textContent = 'Suche läuft …'
+    try {
+      const params = new URLSearchParams({ plz })
+      if (leistung) params.set('leistung', leistung)
+      const res = await fetch(`${form.dataset.api}/api/praxen?${params}`)
+      const data = (await res.json()) as PraxenResponse & { message?: string }
+      if (!res.ok) {
+        status.textContent = data.message ?? 'Suche derzeit nicht möglich.'
+        results.innerHTML = ''
+        return
+      }
+      status.textContent =
+        data.practices.length === 0
+          ? `Keine Praxen im Umkreis von ${data.radiusKm} km gefunden.`
+          : `${data.practices.length} Praxen im Umkreis von ${data.radiusKm} km, sortiert nach Entfernung.`
+      lastResponse = data
+      renderList(data)
+      mapWrap.hidden = false
+      renderMarkers(data)
+    } catch {
+      status.textContent = 'Suche derzeit nicht möglich.'
+    }
+  })
+
+  mapLoadButton.addEventListener('click', async () => {
+    maplibre = await import('maplibre-gl')
+    await import('maplibre-gl/dist/maplibre-gl.css')
+    mapCanvas.hidden = false
+    mapLoadButton.hidden = true
+    map = new maplibre.Map({
+      container: mapCanvas,
+      style: {
+        version: 8,
+        sources: {
+          osm: {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '© OpenStreetMap-Mitwirkende',
+          },
+        },
+        layers: [{ id: 'osm', type: 'raster', source: 'osm' }],
+      },
+      center: [10.45, 51.16],
+      zoom: 5,
+    })
+    if (lastResponse) renderMarkers(lastResponse)
+  })
+</script>

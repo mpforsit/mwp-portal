@@ -1,0 +1,104 @@
+---
+// Transparenz-Seite (Schritt 2.7): Geschäftsmodell-Texte aus dem
+// CMS-Global, Korrelations-View als Tabelle — bei jedem Rebuild
+// aktuell (Build-Time-Fetch).
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { formatDate } from '../../lib/payload'
+import type { TransparencyResponse } from '../../../../api/src/transparenz-public'
+import type { TransparencySetting } from '../../../../cms/src/payload-types'
+
+const cmsUrl = (import.meta.env.PAYLOAD_API_URL as string | undefined)?.replace(/\/$/, '')
+const apiUrl = (
+  (import.meta.env.API_URL as string | undefined) ?? 'http://localhost:3001'
+).replace(/\/$/, '')
+
+const settings: TransparencySetting | null = cmsUrl
+  ? await fetch(`${cmsUrl}/globals/transparency-settings`).then((r) =>
+      r.ok ? (r.json() as Promise<TransparencySetting>) : null,
+    )
+  : null
+
+const transparencyRes = await fetch(`${apiUrl}/api/transparenz`)
+const transparency: TransparencyResponse | null = transparencyRes.ok
+  ? ((await transparencyRes.json()) as TransparencyResponse)
+  : null
+
+const formatCorrelation = (value: number | null): string =>
+  value === null
+    ? '—'
+    : new Intl.NumberFormat('de-DE', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      }).format(value)
+---
+
+<BaseLayout
+  title="Transparenz — wie dieses Portal Geld verdient"
+  description="Geschäftsmodell, Affiliate-Vergütung und Unternehmensverbund — offen erklärt, mit der veröffentlichten Korrelation zwischen Ranking und Vergütung."
+>
+  <article class="article">
+    <h1>Transparenz</h1>
+    {settings?.intro && <p class="article__summary">{settings.intro}</p>}
+
+    <h2>Affiliate-Links im Vergleich</h2>
+    <p>{settings?.affiliate ?? 'Text folgt.'}</p>
+
+    <h2>Der Verbund mit MetaLytic</h2>
+    <p>{settings?.metalytic ?? 'Text folgt.'}</p>
+
+    <h2>Korrelation: Ranking vs. Vergütung</h2>
+    <p>
+      Für jede Vergleichskategorie berechnen wir die Korrelation
+      zwischen der Platzierung eines Produkts und der maximalen
+      Provision, die wir für dieses Produkt erhalten könnten. Der Wert
+      liegt zwischen −1 und +1: Ein Wert nahe 0 oder im Negativen
+      bedeutet, dass gut platzierte Produkte uns nicht mehr einbringen
+      als schlecht platzierte — das Ranking folgt der Methodik, nicht
+      der Vergütung. Ein Wert nahe +1 wäre ein Alarmsignal, das hier
+      für alle sichtbar stünde.
+    </p>
+    {
+      !transparency || transparency.rows.length === 0 ? (
+        <p>
+          Noch keine Daten — die Zahl erscheint mit dem ersten
+          publizierten Vergleich.
+        </p>
+      ) : (
+        <>
+          <table>
+            <thead>
+              <tr>
+                <th>Kategorie</th>
+                <th>Bewertete Produkte</th>
+                <th>Korrelation Rang/Provision</th>
+              </tr>
+            </thead>
+            <tbody>
+              {transparency.rows.map((row) => (
+                <tr>
+                  <td>
+                    <a href={`/vergleich/${row.category}/`}>{row.categoryName}</a>
+                  </td>
+                  <td>{row.productsRanked}</td>
+                  <td>
+                    {formatCorrelation(row.rankCommissionCorrelation)}
+                    {row.rankCommissionCorrelation === null && (
+                      <div class="muted">
+                        ab 2 bewerteten Produkten berechenbar
+                      </div>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p class="muted">
+            Stand: {formatDate(transparency.generatedAt)} — wird bei jedem
+            Rebuild der Seite neu berechnet. Wie bewertet wird, steht in der
+            <a href="/methodik/"> Methodik</a>.
+          </p>
+        </>
+      )
+    }
+  </article>
+</BaseLayout>

@@ -1,0 +1,102 @@
+---
+// Podcast-Episodenseite (Schritt 1.6): Podigee-Embed erst nach
+// Interaktion, Shownotes, verknüpfte Artikel, Transkript aufklappbar,
+// aber vollständig im Initial-HTML (Template 2.5).
+import PodigeePlayer from '../../components/PodigeePlayer.astro'
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { podcastEpisodeNodes } from '../../lib/jsonld'
+import { renderRichText } from '../../lib/lexical'
+import {
+  fetchEpisodes,
+  formatDate,
+  type Article,
+  type PodcastEpisode,
+} from '../../lib/payload'
+import { PODCAST_SERIES_NAME, SITE_URL } from '../../lib/site'
+
+export async function getStaticPaths() {
+  const episodes = await fetchEpisodes()
+  return episodes.map((episode) => ({
+    params: { episode: String(episode.episodeNumber) },
+    props: { episode },
+  }))
+}
+
+interface Props {
+  episode: PodcastEpisode
+}
+
+const { episode } = Astro.props
+
+const showNotesHtml = episode.showNotes
+  ? renderRichText(episode.showNotes)
+  : null
+const transcript = episode.transcript ?? []
+// Relationen sind bei depth=2 populiert; publizierte Artikel haben
+// einen Slug — nur diese verlinken
+const relatedArticles = (episode.relatedArticles ?? []).filter(
+  (a): a is Article => typeof a === 'object' && a !== null,
+)
+---
+
+<BaseLayout
+  title={`Folge ${episode.episodeNumber}: ${episode.title}`}
+  description={`Folge ${episode.episodeNumber} von ${PODCAST_SERIES_NAME}: ${episode.title} — mit Shownotes, verknüpften Artikeln und Transkript.`}
+  jsonLdNodes={podcastEpisodeNodes(episode, PODCAST_SERIES_NAME, SITE_URL)}
+>
+  <article class="article">
+    <h1>Folge {episode.episodeNumber}: {episode.title}</h1>
+    <p class="article__meta">Erschienen am {formatDate(episode.publishDate)}</p>
+
+    <PodigeePlayer
+      podigeeEpisodeId={episode.podigeeEpisodeId}
+      title={episode.title}
+    />
+
+    {
+      showNotesHtml && (
+        <section aria-label="Shownotes">
+          <h2>Shownotes</h2>
+          <div set:html={showNotesHtml} />
+        </section>
+      )
+    }
+
+    {
+      relatedArticles.length > 0 && (
+        <section aria-label="Zur Folge gehörende Artikel">
+          <h2>Zum Nachlesen</h2>
+          <ul class="card-list">
+            {relatedArticles.map((article) => (
+              <li class="card">
+                <h3 class="card__title">
+                  <a href={`/wissen/${article.slug}/`}>{article.title}</a>
+                </h3>
+                <p>{article.kernaussage}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )
+    }
+
+    {
+      transcript.length > 0 && (
+        <section aria-label="Transkript">
+          <h2>Transkript</h2>
+          <details class="transcript">
+            <summary class="transcript__toggle">Transkript anzeigen</summary>
+            <div class="transcript__body">
+              {transcript.map((entry) => (
+                <p>
+                  <strong class="transcript__speaker">{entry.speaker}:</strong>{' '}
+                  {entry.text}
+                </p>
+              ))}
+            </div>
+          </details>
+        </section>
+      )
+    }
+  </article>
+</BaseLayout>

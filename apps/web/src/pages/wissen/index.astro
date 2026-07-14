@@ -1,0 +1,36 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { fetchArticles } from '../../lib/payload'
+
+const articles = await fetchArticles()
+---
+
+<BaseLayout
+  title="Wissen — medizinisch geprüfte Artikel"
+  description="Redaktionelle Deep-Dives zu Gesundheits- und Longevity-Themen: mit Quellen, Evidenzgrad und ärztlichem Review."
+  activeZone="wissen"
+>
+  <h1>Wissen</h1>
+  <p>
+    Was die Studienlage zu einer Maßnahme hergibt, wie groß die Effekte
+    sind und woran sich das messen lässt. Jeder Artikel nennt seine
+    Quellen, den Evidenzgrad und die ärztliche Prüfung. Dieser Bereich
+    ist werbefrei.
+  </p>
+  {
+    articles.length === 0 ? (
+      <p>Die ersten Artikel erscheinen in Kürze.</p>
+    ) : (
+      <ul class="card-list">
+        {articles.map((article) => (
+          <li class="card">
+            <h2 class="card__title">
+              <a href={`/wissen/${article.slug}/`}>{article.title}</a>
+            </h2>
+            <p>{article.kernaussage}</p>
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</BaseLayout>

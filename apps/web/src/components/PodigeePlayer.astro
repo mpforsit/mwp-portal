@@ -1,0 +1,43 @@
+---
+// Datenschutzkonformer Podigee-Embed: Vor der Interaktion wird kein
+// Request an Podigee gestellt (kein Third-Party-Cookie); erst der
+// Klick erzeugt das iframe. Ohne JS bleibt der Direktlink.
+interface Props {
+  podigeeEpisodeId: string
+  title: string
+}
+
+const { podigeeEpisodeId, title } = Astro.props
+const embedBase = (
+  import.meta.env.PODIGEE_BASE_URL ?? 'https://PLATZHALTER.podigee.io'
+).replace(/\/$/, '')
+const embedUrl = `${embedBase}/${podigeeEpisodeId}/embed?context=external`
+---
+
+<div class="player" data-embed-url={embedUrl}>
+  <p class="player__note">
+    Der Audio-Player wird von Podigee geladen. Erst mit dem Abspielen
+    werden Daten an Podigee übertragen.
+  </p>
+  <button class="player__load" type="button">
+    Folge abspielen: {title}
+  </button>
+  <noscript>
+    <p>
+      <a href={embedUrl} rel="noopener">Folge bei Podigee anhören</a>
+    </p>
+  </noscript>
+</div>
+
+<script>
+  for (const player of document.querySelectorAll<HTMLElement>('.player')) {
+    player.querySelector('.player__load')?.addEventListener('click', () => {
+      const iframe = document.createElement('iframe')
+      iframe.src = player.dataset.embedUrl ?? ''
+      iframe.className = 'player__frame'
+      iframe.title = 'Podigee-Podcast-Player'
+      iframe.setAttribute('allow', 'autoplay')
+      player.replaceChildren(iframe)
+    })
+  }
+</script>

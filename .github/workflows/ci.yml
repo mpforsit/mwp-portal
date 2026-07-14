@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      # für die CMS-Integrationstests (Review-Workflow)
+      postgres:
+        image: postgis/postgis:15-3.4
+        env:
+          POSTGRES_USER: portal
+          POSTGRES_PASSWORD: portal
+          POSTGRES_DB: portal
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U portal -d portal"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm -r typecheck
+
+      - run: pnpm -r lint
+
+      - run: pnpm -r --workspace-concurrency=1 test
+
+  deploy-staging:
+    # Coolify deployt den main-Branch; der Webhook stößt das Deploy an.
+    # Secret COOLIFY_DEPLOY_WEBHOOK: Webhook-URL inkl. Token aus Coolify.
+    # Variable STAGING_URL: Basis-URL der Staging-Umgebung.
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy-Trigger an Coolify
+        run: |
+          if [ -z "${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}" ]; then
+            echo "COOLIFY_DEPLOY_WEBHOOK ist nicht gesetzt — Deploy übersprungen." >&2
+            exit 1
+          fi
+          curl -fsS -X POST "${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}"
+
+      - name: Smoke-Test Staging-Startseite
+        run: |
+          url="${{ vars.STAGING_URL }}"
+          if [ -z "$url" ]; then
+            echo "Variable STAGING_URL ist nicht gesetzt." >&2
+            exit 1
+          fi
+          # Deploy abwarten: bis zu 5 Minuten auf HTTP 200 pollen
+          for i in $(seq 1 30); do
+            status=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "$url" || echo "000")
+            echo "Versuch $i: $status"
+            if [ "$status" = "200" ]; then
+              echo "Staging antwortet mit 200."
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "Staging hat nach 5 Minuten keine 200 geliefert." >&2
+          exit 1

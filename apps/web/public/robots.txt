@@ -1,0 +1,51 @@
+# Crawler-Politik (siehe docs/artefakte/strategie-kontext.md, Abschnitt 5):
+# alles erlauben — Training UND Suche —, aggressive Scraper sperren.
+# Entscheidung ist gefallen; nicht auf "Training blocken" zurückfallen.
+
+# --- KI-Crawler: explizit erlaubt -----------------------------------
+User-agent: GPTBot
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+
+User-agent: ChatGPT-User
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Perplexity-User
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: DuckAssistBot
+Allow: /
+
+User-agent: MistralAI-User
+Allow: /
+
+# --- Aggressive Scraper: gesperrt -----------------------------------
+User-agent: Bytespider
+Disallow: /
+
+User-agent: ImagesiftBot
+Disallow: /
+
+# --- Alle übrigen ----------------------------------------------------
+User-agent: *
+Allow: /
+
+# TODO: Domain nach DNS-Umstellung eintragen (Schritt 0.3, manuell)
+Sitemap: https://PORTAL-DOMAIN.de/sitemap-index.xml

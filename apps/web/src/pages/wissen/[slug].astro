@@ -1,0 +1,194 @@
+---
+// Wissensartikel-Seitentyp (Schritt 1.3) — Aufbau exakt nach
+// docs/artefakte/redaktions-template-geo-checkliste.md Teil 1:
+// Kernaussage-Box (Layout), TOC aus H2s, RichText mit echten Tabellen,
+// FAQ, Messgrößen-Block, nummerierte Quellen, sichtbarer Meta-Block.
+import NewsletterSignup from '../../components/NewsletterSignup.astro'
+import ArticleLayout from '../../layouts/ArticleLayout.astro'
+import { articleNodes } from '../../lib/jsonld'
+import { extractToc, renderRichText } from '../../lib/lexical'
+import {
+  fetchArticles,
+  fetchNewsletterSettings,
+  formatDate,
+  formatMedicName,
+  type Article,
+} from '../../lib/payload'
+import { SITE_URL } from '../../lib/site'
+
+export async function getStaticPaths() {
+  const articles = await fetchArticles()
+  return articles.map((article) => ({
+    params: { slug: article.slug },
+    props: { article },
+  }))
+}
+
+interface Props {
+  article: Article
+}
+
+const { article } = Astro.props
+const newsletterSettings = await fetchNewsletterSettings()
+
+const asObject = <T,>(value: T | number | null | undefined): T | null =>
+  typeof value === 'object' && value !== null ? value : null
+
+const author = asObject(article.author)
+const category = asObject(article.category)
+const reviewedBy = asObject(article.review?.reviewedBy)
+
+const html = renderRichText(article.content)
+const toc = extractToc(article.content)
+const faq = article.faq ?? []
+const sources = article.sources ?? []
+const messgroesse = article.messgroesse
+
+const sourceHref = (s: NonNullable<Article['sources']>[number]): string | null => {
+  if (s.refType === 'doi') return `https://doi.org/${s.ref}`
+  if (s.refType === 'pubmed') return `https://pubmed.ncbi.nlm.nih.gov/${s.ref}/`
+  return s.ref
+}
+---
+
+<ArticleLayout
+  title={article.title}
+  description={article.kernaussage}
+  kernaussage={article.kernaussage}
+  evidenzgrad={article.evidenzgrad}
+  stand={formatDate(article.lastFactCheck)}
+  activeZone="wissen"
+  jsonLdNodes={articleNodes(article, SITE_URL)}
+>
+  {
+    toc.length > 1 && (
+      <nav class="toc" aria-label="Inhalt">
+        <h2 class="toc__title">Inhalt</h2>
+        <ol class="toc__list">
+          {toc.map((entry) => (
+            <li>
+              <a href={`#${entry.id}`}>{entry.label}</a>
+            </li>
+          ))}
+        </ol>
+      </nav>
+    )
+  }
+
+  <div set:html={html} />
+
+  {
+    messgroesse?.biomarker && (
+      <section class="measure" aria-label="Messgröße">
+        <h2>Woran erkenne ich, ob das bei mir wirkt?</h2>
+        <dl class="measure__list">
+          <dt>Messgröße</dt>
+          <dd>{messgroesse.biomarker}</dd>
+          {messgroesse.referenzbereich && (
+            <>
+              <dt>Referenzbereich</dt>
+              <dd>{messgroesse.referenzbereich}</dd>
+            </>
+          )}
+          {messgroesse.intervall && (
+            <>
+              <dt>Messintervall</dt>
+              <dd>{messgroesse.intervall}</dd>
+            </>
+          )}
+        </dl>
+        <p>
+          Wie du diesen Wert bestimmen lässt, steht im Bereich
+          <a href="/messen/"> Messen</a>.
+        </p>
+      </section>
+    )
+  }
+
+  {
+    faq.length > 0 && (
+      <section aria-label="Häufige Fragen">
+        <h2>Häufige Fragen</h2>
+        {faq.map((entry) => (
+          <>
+            <h3>{entry.frage}</h3>
+            <p>{entry.antwort}</p>
+          </>
+        ))}
+      </section>
+    )
+  }
+
+  {
+    sources.length > 0 && (
+      <section aria-label="Quellen">
+        <h2>Quellen</h2>
+        <ol class="sources">
+          {sources.map((source) => {
+            const href = sourceHref(source)
+            return (
+              <li>
+                {source.citation}
+                {href && (
+                  <>
+                    {' — '}
+                    <a href={href} rel="noopener">
+                      {source.refType === 'doi'
+                        ? `doi:${source.ref}`
+                        : source.refType === 'pubmed'
+                          ? `PubMed ${source.ref}`
+                          : 'Link'}
+                    </a>
+                  </>
+                )}
+              </li>
+            )
+          })}
+        </ol>
+      </section>
+    )
+  }
+
+  {
+    newsletterSettings && (
+      <NewsletterSignup
+        settings={newsletterSettings}
+        interest={category?.slug ?? 'allgemein'}
+      />
+    )
+  }
+
+  <footer class="article-meta">
+    <h2 class="article-meta__title">Über diesen Artikel</h2>
+    <dl class="article-meta__list">
+      <dt>Autor:in</dt>
+      <dd>
+        {author?.name ?? '—'}
+        {author?.qualification && ` (${author.qualification})`}
+      </dd>
+      {
+        article.review?.status === 'medizinisch_geprueft' && reviewedBy && (
+          <>
+            <dt>Medizinisch geprüft</dt>
+            <dd>
+              von {formatMedicName(reviewedBy)}, {reviewedBy.specialty} am{' '}
+              {formatDate(article.review?.reviewDate)}
+            </dd>
+          </>
+        )
+      }
+      <dt>Veröffentlicht</dt>
+      <dd>{formatDate(article.createdAt)}</dd>
+      <dt>Zuletzt aktualisiert</dt>
+      <dd>{formatDate(article.updatedAt)}</dd>
+      {
+        category && (
+          <>
+            <dt>Thema</dt>
+            <dd>{category.name}</dd>
+          </>
+        )
+      }
+    </dl>
+  </footer>
+</ArticleLayout>

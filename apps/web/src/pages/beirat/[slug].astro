@@ -1,0 +1,81 @@
+---
+// Beirats-Seite (Schritt 1.5): Entitäts-Anker für reviewedBy
+// (Template 2.7) mit Liste der geprüften Artikel.
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { medicPersonNodes } from '../../lib/jsonld'
+import {
+  fetchArticles,
+  fetchMedics,
+  formatMedicName,
+  mediaUrl,
+  type Article,
+  type Medic,
+} from '../../lib/payload'
+import { SITE_URL } from '../../lib/site'
+
+export async function getStaticPaths() {
+  const [medics, articles] = await Promise.all([fetchMedics(), fetchArticles()])
+  return medics
+    .filter((medic) => Boolean(medic.slug))
+    .map((medic) => ({
+      params: { slug: medic.slug },
+      props: {
+        medic,
+        reviewedArticles: articles.filter((article) => {
+          if (article.review?.status !== 'medizinisch_geprueft') return false
+          const reviewer = article.review?.reviewedBy
+          const reviewerId =
+            typeof reviewer === 'object' && reviewer !== null
+              ? reviewer.id
+              : reviewer
+          return reviewerId === medic.id
+        }),
+      },
+    }))
+}
+
+interface Props {
+  medic: Medic
+  reviewedArticles: Article[]
+}
+
+const { medic, reviewedArticles } = Astro.props
+const photo = mediaUrl(medic.photo)
+---
+
+<BaseLayout
+  title={`${formatMedicName(medic)} — Medizinischer Beirat`}
+  description={`${formatMedicName(medic)}, ${medic.specialty}: Profil und medizinisch geprüfte Artikel.`}
+  jsonLdNodes={medicPersonNodes(medic, SITE_URL)}
+>
+  <article class="article">
+    <h1>{formatMedicName(medic)}</h1>
+    <p class="article__meta">{medic.specialty}</p>
+    {photo && <img src={photo} alt={`Porträt von ${formatMedicName(medic)}`} width="320" />}
+    {medic.bio && <p>{medic.bio}</p>}
+    {
+      medic.practiceUrl && (
+        <p>
+          <a href={medic.practiceUrl} rel="noopener">
+            Website der Praxis
+          </a>
+        </p>
+      )
+    }
+
+    <h2>Medizinisch geprüfte Artikel</h2>
+    {
+      reviewedArticles.length === 0 ? (
+        <p>Noch keine geprüften Artikel veröffentlicht.</p>
+      ) : (
+        <ul>
+          {reviewedArticles.map((article) => (
+            <li>
+              <a href={`/wissen/${article.slug}/`}>{article.title}</a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </article>
+</BaseLayout>

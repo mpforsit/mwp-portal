@@ -1,0 +1,51 @@
+---
+import type { JsonLdNode } from '../lib/jsonld'
+import BaseLayout from './BaseLayout.astro'
+
+interface Props {
+  title: string
+  description: string
+  kernaussage: string
+  evidenzgrad: 'hoch' | 'mittel' | 'niedrig' | 'unklar'
+  stand: string
+  activeZone?: 'wissen' | 'vergleich' | 'messen'
+  jsonLdNodes?: JsonLdNode[]
+}
+
+const {
+  title,
+  description,
+  kernaussage,
+  evidenzgrad,
+  stand,
+  activeZone,
+  jsonLdNodes,
+} = Astro.props
+
+const evidenzLabel: Record<Props['evidenzgrad'], string> = {
+  hoch: 'Evidenz: hoch',
+  mittel: 'Evidenz: mittel',
+  niedrig: 'Evidenz: niedrig',
+  unklar: 'Evidenz: unklar',
+}
+---
+
+<BaseLayout
+  title={title}
+  description={description}
+  activeZone={activeZone}
+  jsonLdNodes={jsonLdNodes}
+  ogType="article"
+>
+  <article class="article">
+    <h1>{title}</h1>
+    <aside class="article__summary" aria-label="Kernaussage">
+      <p>
+        <span class="badge">{evidenzLabel[evidenzgrad]}</span>
+        <span class="badge">Stand: {stand}</span>
+      </p>
+      <p>{kernaussage}</p>
+    </aside>
+    <slot />
+  </article>
+</BaseLayout>

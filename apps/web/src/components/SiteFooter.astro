@@ -1,0 +1,38 @@
+---
+import { fetchNewsletterSettings } from '../lib/payload'
+import NewsletterSignup from './NewsletterSignup.astro'
+
+const year = new Date().getFullYear()
+const newsletterSettings = await fetchNewsletterSettings()
+---
+
+<footer class="site-footer">
+  <div class="page">
+    {
+      newsletterSettings && (
+        <NewsletterSignup settings={newsletterSettings} interest="allgemein" />
+      )
+    }
+    <nav class="site-footer__nav" aria-label="Rechtliches">
+      <a class="site-footer__link" href="/methodik/">So testen wir</a>
+      <a class="site-footer__link" href="/transparenz/">Transparenz</a>
+      <a class="site-footer__link" href="/impressum/">Impressum</a>
+      <a class="site-footer__link" href="/datenschutz/">Datenschutz</a>
+      <button class="site-footer__link site-footer__consent" type="button">
+        Datenschutz-Einstellungen
+      </button>
+    </nav>
+    <p>
+      © {year} · Inhalte ersetzen keine ärztliche Beratung. Wie wir
+      arbeiten und woran wir verdienen, steht auf der Transparenz-Seite.
+    </p>
+  </div>
+</footer>
+
+<script>
+  document
+    .querySelector('.site-footer__consent')
+    ?.addEventListener('click', () =>
+      document.dispatchEvent(new CustomEvent('portal:consent-open')),
+    )
+</script>

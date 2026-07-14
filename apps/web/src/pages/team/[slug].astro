@@ -1,0 +1,65 @@
+---
+// Autoren-Seite (Schritt 1.5): Entitäts-Anker für author
+// (Template 2.7) mit Liste der verfassten Artikel.
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { teamPersonNodes } from '../../lib/jsonld'
+import {
+  fetchArticles,
+  fetchTeamMembers,
+  type Article,
+  type User,
+} from '../../lib/payload'
+import { SITE_URL } from '../../lib/site'
+
+export async function getStaticPaths() {
+  const [members, articles] = await Promise.all([
+    fetchTeamMembers(),
+    fetchArticles(),
+  ])
+  return members.map((member) => ({
+    params: { slug: member.slug },
+    props: {
+      member,
+      authoredArticles: articles.filter((article) => {
+        const author = article.author
+        const authorId =
+          typeof author === 'object' && author !== null ? author.id : author
+        return authorId === member.id
+      }),
+    },
+  }))
+}
+
+interface Props {
+  member: User
+  authoredArticles: Article[]
+}
+
+const { member, authoredArticles } = Astro.props
+---
+
+<BaseLayout
+  title={`${member.name} — Redaktion`}
+  description={`${member.name}${member.qualification ? `, ${member.qualification}` : ''}: Profil und Artikel.`}
+  jsonLdNodes={teamPersonNodes(member, SITE_URL)}
+>
+  <article class="article">
+    <h1>{member.name}</h1>
+    {member.qualification && <p class="article__meta">{member.qualification}</p>}
+
+    <h2>Artikel</h2>
+    {
+      authoredArticles.length === 0 ? (
+        <p>Noch keine Artikel veröffentlicht.</p>
+      ) : (
+        <ul>
+          {authoredArticles.map((article) => (
+            <li>
+              <a href={`/wissen/${article.slug}/`}>{article.title}</a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </article>
+</BaseLayout>

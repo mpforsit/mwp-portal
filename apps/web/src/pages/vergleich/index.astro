@@ -1,0 +1,41 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { fetchComparisonCategories } from '../../lib/vergleich'
+
+const categories = await fetchComparisonCategories()
+---
+
+<BaseLayout
+  title="Vergleich — Produkte nach dokumentierten Kriterien"
+  description="Produktvergleiche mit offengelegter, versionierter Methodik. Vergütete Links sind einzeln gekennzeichnet."
+  activeZone="vergleich"
+>
+  <h1>Vergleich</h1>
+  <p class="zone-notice">
+    Hinweis: Dieser Bereich enthält Affiliate-Links (Werbung). Vergütete
+    Links sind einzeln gekennzeichnet. Die Bewertung folgt einer
+    dokumentierten, versionierten Methodik und ist von der Vergütung
+    unabhängig.
+  </p>
+  <p>
+    Kriterienbasierte Produktvergleiche mit offengelegten Gewichten und
+    versionierter Methodik. Gelistet werden auch Anbieter ohne
+    Partnerprogramm.
+  </p>
+  {
+    categories.length === 0 ? (
+      <p>Die ersten Vergleiche erscheinen in Kürze.</p>
+    ) : (
+      <ul class="card-list">
+        {categories.map((category) => (
+          <li class="card">
+            <h2 class="card__title">
+              <a href={`/vergleich/${category.slug}/`}>{category.name}</a>
+            </h2>
+            {category.description && <p>{category.description}</p>}
+          </li>
+        ))}
+      </ul>
+    )
+  }
+</BaseLayout>

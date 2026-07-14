@@ -1,0 +1,82 @@
+---
+// Newsletter-Capture (Schritt 1.7): postet an /newsletter/subscribe
+// der API. Mitgesendet wird ausschließlich die Interessens-Kategorie
+// der Seite (rote Linie: Segmentierung nur nach Interessen).
+// Interaktive Insel — Texte und Datenschutzhinweis kommen aus dem CMS.
+import type { NewsletterSetting } from '../lib/payload'
+
+interface Props {
+  settings: NewsletterSetting
+  interest: string
+}
+
+const { settings, interest } = Astro.props
+const apiUrl = (
+  import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001'
+).replace(/\/$/, '')
+---
+
+<aside class="newsletter" aria-label="Newsletter">
+  <h2 class="newsletter__heading">{settings.heading}</h2>
+  <p>{settings.intro}</p>
+  <form
+    class="newsletter__form"
+    data-endpoint={`${apiUrl}/newsletter/subscribe`}
+    data-interest={interest}
+  >
+    <label class="newsletter__label" for={`newsletter-email-${interest}`}>
+      E-Mail-Adresse
+    </label>
+    <div class="newsletter__row">
+      <input
+        class="newsletter__input"
+        id={`newsletter-email-${interest}`}
+        type="email"
+        name="email"
+        required
+        autocomplete="email"
+        placeholder="name@beispiel.de"
+      />
+      <button class="newsletter__submit" type="submit">Anmelden</button>
+    </div>
+    <p class="newsletter__status" role="status" aria-live="polite"></p>
+  </form>
+  <noscript>
+    <p class="newsletter__privacy">
+      Die Anmeldung benötigt JavaScript. Alternativ erreichst du uns über
+      die im Impressum genannte Adresse.
+    </p>
+  </noscript>
+  <p class="newsletter__privacy">{settings.datenschutzhinweis}</p>
+</aside>
+
+<script>
+  for (const form of document.querySelectorAll<HTMLFormElement>(
+    '.newsletter__form',
+  )) {
+    form.addEventListener('submit', async (event) => {
+      event.preventDefault()
+      const status = form.querySelector<HTMLElement>('.newsletter__status')
+      const email = (
+        form.querySelector<HTMLInputElement>('input[name="email"]') ?? null
+      )?.value
+      if (!status || !email) return
+      status.textContent = 'Wird gesendet …'
+      try {
+        const res = await fetch(form.dataset.endpoint ?? '', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ email, interest: form.dataset.interest }),
+        })
+        const data = (await res.json()) as { message?: string }
+        status.textContent =
+          data.message ??
+          (res.ok
+            ? 'Fast geschafft: Bitte E-Mail bestätigen.'
+            : 'Anmeldung derzeit nicht möglich.')
+      } catch {
+        status.textContent = 'Anmeldung derzeit nicht möglich.'
+      }
+    })
+  }
+</script>

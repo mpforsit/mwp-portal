@@ -1,0 +1,57 @@
+---
+import ConsentManager from '../components/ConsentManager.astro'
+import JsonLd from '../components/JsonLd.astro'
+import SiteFooter from '../components/SiteFooter.astro'
+import SiteHeader from '../components/SiteHeader.astro'
+import type { JsonLdNode } from '../lib/jsonld'
+import '../styles/global.css'
+
+import { SITE_NAME } from '../lib/site'
+
+interface Props {
+  title: string
+  description: string
+  activeZone?: 'wissen' | 'vergleich' | 'messen'
+  jsonLdNodes?: JsonLdNode[]
+  ogType?: 'website' | 'article'
+}
+
+const {
+  title,
+  description,
+  activeZone,
+  jsonLdNodes,
+  ogType = 'website',
+} = Astro.props
+
+const canonical = new URL(Astro.url.pathname, Astro.site).href
+---
+
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+    <link rel="canonical" href={canonical} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="de_DE" />
+    <meta name="twitter:card" content="summary" />
+    <JsonLd nodes={jsonLdNodes} />
+  </head>
+  <body>
+    <SiteHeader activeZone={activeZone} />
+    <main class="site-main">
+      <div class="page">
+        <slot />
+      </div>
+    </main>
+    <SiteFooter />
+    <ConsentManager />
+  </body>
+</html>

@@ -1,0 +1,172 @@
+---
+// Vergleichsseite (Schritt 2.4): vollständige Tabelle statisch im
+// HTML aus current_ranking; Sortierung als progressive Enhancement
+// (ohne JS: statische Tabelle nach Rang). JSON-LD nach Template 2.3.
+import BaseLayout from '../../layouts/BaseLayout.astro'
+import { comparisonNodes } from '../../lib/jsonld'
+import { formatDate } from '../../lib/payload'
+import {
+  API_PUBLIC_URL,
+  fetchComparison,
+  fetchComparisonCategories,
+  formatPrice,
+  type ComparisonResponse,
+} from '../../lib/vergleich'
+import { SITE_URL } from '../../lib/site'
+
+export async function getStaticPaths() {
+  const categories = await fetchComparisonCategories()
+  const comparisons = await Promise.all(
+    categories.map((c) => fetchComparison(c.slug)),
+  )
+  return comparisons.map((comparison) => ({
+    params: { kategorie: comparison.category.slug },
+    props: { comparison },
+  }))
+}
+
+interface Props {
+  comparison: ComparisonResponse
+}
+
+const { comparison } = Astro.props
+const { category, methodology, products } = comparison
+---
+
+<BaseLayout
+  title={`${category.name} im Vergleich`}
+  description={`${products.length} ${category.name} nach dokumentierter Methodik v${methodology.version} bewertet — mit Scores je Kriterium, Preisen und Kurzfazit.`}
+  activeZone="vergleich"
+  jsonLdNodes={comparisonNodes(comparison, SITE_URL)}
+>
+  <h1>{category.name} im Vergleich</h1>
+
+  <p class="zone-notice">
+    Hinweis: Dieser Bereich enthält Affiliate-Links (Werbung).
+    Vergütete Links sind einzeln gekennzeichnet; die Bewertung ist von
+    der Vergütung unabhängig.
+    <a href={`/methodik/${category.slug}/`}>
+      Bewertet nach Methodik v{methodology.version}</a>.
+  </p>
+
+  {category.description && <p>{category.description}</p>}
+
+  <div class="compare" data-compare>
+    <table class="compare__table">
+      <thead>
+        <tr>
+          <th data-sort="num">Rang</th>
+          <th data-sort="text">Produkt</th>
+          {
+            methodology.criteria.map((c) => (
+              <th data-sort="num" title={`Gewicht: ${c.weight}${c.unit ? ` · ${c.unit}` : ''}`}>
+                {c.label}
+              </th>
+            ))
+          }
+          <th data-sort="num">Gesamt</th>
+          <th data-sort="num">Preis</th>
+          <th>Kurzfazit</th>
+          <th>Anbieter</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          products.map((p) => (
+            <tr>
+              <td data-value={p.rank}>{p.rank}</td>
+              <td data-value={p.name}>
+                <strong>{p.name}</strong>
+                <div class="muted">{p.manufacturer}</div>
+              </td>
+              {methodology.criteria.map((c) => {
+                const score = p.scores[c.key]
+                return (
+                  <td data-value={score?.points ?? ''}>
+                    {score ? `${score.points}/10` : '—'}
+                    {score?.raw !== undefined && (
+                      <div class="muted">{String(score.raw)}</div>
+                    )}
+                  </td>
+                )
+              })}
+              <td data-value={p.totalScore}>
+                <strong>{p.totalScore}</strong>/100
+              </td>
+              <td data-value={p.price?.cents ?? ''}>
+                {p.price ? (
+                  <>
+                    {formatPrice(p.price)}
+                    <div class="muted">
+                      Stand: {formatDate(p.price.capturedAt)}
+                    </div>
+                  </>
+                ) : (
+                  '—'
+                )}
+              </td>
+              <td>{p.summary ?? '—'}</td>
+              <td>
+                {p.affiliateLinks.length === 0
+                  ? '—'
+                  : p.affiliateLinks.map((link) => (
+                      <a
+                        class="affiliate-button"
+                        href={`${API_PUBLIC_URL}/go/${link.id}`}
+                        rel="sponsored noopener"
+                        data-shop-link
+                      >
+                        Zu {link.partner}
+                        <span class="affiliate-button__label">Anzeige</span>
+                      </a>
+                    ))}
+              </td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <p class="muted">
+    Stand der Bewertungen: Methodik v{methodology.version}
+    {methodology.activatedAt && ` (aktiv seit ${formatDate(methodology.activatedAt)})`}.
+    Auch Anbieter ohne Partnerprogramm werden gelistet; Zeilen ohne
+    „Anzeige"-Button enthalten keine vergüteten Links.
+  </p>
+</BaseLayout>
+
+<script>
+  // Progressive Enhancement: Spalten-Sortierung. Ohne JS bleibt die
+  // Tabelle statisch nach Rang sortiert.
+  for (const table of document.querySelectorAll<HTMLTableElement>(
+    '[data-compare] table',
+  )) {
+    const tbody = table.tBodies[0]
+    if (!tbody) continue
+    table.querySelectorAll<HTMLTableCellElement>('th[data-sort]').forEach(
+      (th, index) => {
+        const button = document.createElement('button')
+        button.type = 'button'
+        button.className = 'compare__sort'
+        button.textContent = th.textContent ?? ''
+        th.replaceChildren(button)
+        let asc = true
+        button.addEventListener('click', () => {
+          const rows = [...tbody.rows]
+          const numeric = th.dataset.sort === 'num'
+          rows.sort((a, b) => {
+            const va = a.cells[index]?.dataset.value ?? ''
+            const vb = b.cells[index]?.dataset.value ?? ''
+            const result = numeric
+              ? (Number(va) || Infinity) - (Number(vb) || Infinity)
+              : va.localeCompare(vb, 'de')
+            return asc ? result : -result
+          })
+          asc = !asc
+          tbody.replaceChildren(...rows)
+        })
+      },
+    )
+  }
+</script>

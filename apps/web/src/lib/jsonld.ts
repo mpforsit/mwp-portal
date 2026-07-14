@@ -1,0 +1,294 @@
+// JSON-LD-Graphen nach docs/artefakte/redaktions-template-geo-checkliste.md
+// Teil 2. Reine Funktionen (Build-Time), gerendert über JsonLd.astro.
+// Alle Werte kommen aus CMS-Feldern — nie aus dem Build-Zeitpunkt.
+import {
+  formatMedicName,
+  type Article,
+  type Medic,
+  type PodcastEpisode,
+  type User,
+} from './payload'
+import type { ComparisonResponse } from './vergleich'
+
+export type JsonLdNode = Record<string, unknown>
+
+const dateOnly = (iso: string | null | undefined): string | undefined =>
+  iso ? iso.slice(0, 10) : undefined
+
+const asObject = <T,>(value: T | number | null | undefined): T | null =>
+  typeof value === 'object' && value !== null ? value : null
+
+// --- Sitewide (Template 2.1): auf jeder Seite im @graph enthalten,
+// von Seiten-Knoten per @id referenziert -----------------------------
+export const siteNodes = (siteUrl: string, siteName: string): JsonLdNode[] => [
+  {
+    '@type': 'Organization',
+    '@id': `${siteUrl}/#org`,
+    name: siteName,
+    url: `${siteUrl}/`,
+    // TODO nach Launch pflegen: logo, sameAs (Wikidata, LinkedIn,
+    // Spotify), publishingPrinciples → /methodik/redaktionelle-leitlinien
+  },
+  {
+    '@type': 'WebSite',
+    '@id': `${siteUrl}/#website`,
+    name: siteName,
+    url: `${siteUrl}/`,
+    publisher: { '@id': `${siteUrl}/#org` },
+    inLanguage: 'de',
+  },
+]
+
+// --- Wissensartikel (Template 2.2):
+// MedicalWebPage + Article + Person-Reviewer + FAQPage + BreadcrumbList
+export const articleNodes = (
+  article: Pick<
+    Article,
+    | 'title'
+    | 'slug'
+    | 'kernaussage'
+    | 'faq'
+    | 'sources'
+    | 'createdAt'
+    | 'updatedAt'
+    | 'lastFactCheck'
+    | 'review'
+    | 'author'
+    | 'category'
+  >,
+  siteUrl: string,
+): JsonLdNode[] => {
+  const pageUrl = `${siteUrl}/wissen/${article.slug}/`
+  const author = asObject(article.author)
+  const category = asObject(article.category)
+  const reviewedBy = asObject(article.review?.reviewedBy)
+  const isReviewed =
+    article.review?.status === 'medizinisch_geprueft' && reviewedBy !== null
+
+  const citations = (article.sources ?? [])
+    .filter((s) => s.refType === 'doi' || s.refType === 'pubmed')
+    .map((s) => ({
+      '@type': 'ScholarlyArticle',
+      name: s.citation,
+      identifier: s.refType === 'doi' ? `doi:${s.ref}` : `pmid:${s.ref}`,
+    }))
+
+  const medicalWebPage: JsonLdNode = {
+    '@type': 'MedicalWebPage',
+    '@id': `${pageUrl}#page`,
+    url: pageUrl,
+    name: article.title,
+    isPartOf: { '@id': `${siteUrl}/#website` },
+    ...(category ? { about: { '@type': 'MedicalEntity', name: category.name } } : {}),
+    ...(isReviewed
+      ? {
+          lastReviewed: dateOnly(article.review?.reviewDate),
+          reviewedBy: { '@id': `${pageUrl}#reviewer` },
+        }
+      : {}),
+  }
+
+  const articleNode: JsonLdNode = {
+    '@type': 'Article',
+    headline: article.title,
+    description: article.kernaussage,
+    author: {
+      '@type': 'Person',
+      name: author?.name ?? 'Redaktion',
+      ...(author?.slug ? { url: `${siteUrl}/team/${author.slug}/` } : {}),
+    },
+    publisher: { '@id': `${siteUrl}/#org` },
+    datePublished: dateOnly(article.createdAt),
+    // dateModified = letzte inhaltliche Änderung (Hook setzt
+    // lastFactCheck bei Anlage + Content-Änderung), nicht updatedAt —
+    // sonst entwertet jeder Tippfehler-Save das Signal
+    dateModified: dateOnly(article.lastFactCheck ?? article.updatedAt),
+    ...(citations.length > 0 ? { citation: citations } : {}),
+    mainEntityOfPage: { '@id': `${pageUrl}#page` },
+  }
+
+  const nodes: JsonLdNode[] = [medicalWebPage, articleNode]
+
+  if (isReviewed && reviewedBy) {
+    nodes.push({
+      '@type': 'Person',
+      '@id': `${pageUrl}#reviewer`,
+      name: formatMedicName(reviewedBy),
+      jobTitle: reviewedBy.specialty,
+      ...(reviewedBy.slug
+        ? { url: `${siteUrl}/beirat/${reviewedBy.slug}/` }
+        : {}),
+    })
+  }
+
+  const faq = article.faq ?? []
+  if (faq.length > 0) {
+    nodes.push({
+      '@type': 'FAQPage',
+      mainEntity: faq.map((entry) => ({
+        '@type': 'Question',
+        name: entry.frage,
+        acceptedAnswer: { '@type': 'Answer', text: entry.antwort },
+      })),
+    })
+  }
+
+  nodes.push({
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      {
+        '@type': 'ListItem',
+        position: 1,
+        name: 'Wissen',
+        item: `${siteUrl}/wissen/`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: article.title,
+        item: pageUrl,
+      },
+    ],
+  })
+
+  return nodes
+}
+
+// --- Beirats-/Autorenseiten (Template 2.7): Person-Markup — die
+// Entitäts-Anker, auf die reviewedBy/author zeigen --------------------
+export const medicPersonNodes = (
+  medic: Pick<Medic, 'name' | 'slug' | 'title' | 'specialty' | 'practiceUrl'>,
+  siteUrl: string,
+): JsonLdNode[] => {
+  const pageUrl = `${siteUrl}/beirat/${medic.slug}/`
+  return [
+    {
+      '@type': 'Person',
+      '@id': `${pageUrl}#person`,
+      name: formatMedicName(medic),
+      ...(medic.title ? { honorificPrefix: medic.title } : {}),
+      jobTitle: medic.specialty,
+      url: pageUrl,
+      ...(medic.practiceUrl ? { sameAs: [medic.practiceUrl] } : {}),
+    },
+  ]
+}
+
+export const teamPersonNodes = (
+  user: Pick<User, 'name' | 'slug' | 'qualification'>,
+  siteUrl: string,
+): JsonLdNode[] => {
+  const pageUrl = `${siteUrl}/team/${user.slug}/`
+  return [
+    {
+      '@type': 'Person',
+      '@id': `${pageUrl}#person`,
+      name: user.name,
+      ...(user.qualification ? { jobTitle: user.qualification } : {}),
+      url: pageUrl,
+      affiliation: { '@id': `${siteUrl}/#org` },
+    },
+  ]
+}
+
+// --- Podcast-Episode (Template 2.5) ----------------------------------
+export const podcastEpisodeNodes = (
+  episode: Pick<
+    PodcastEpisode,
+    'title' | 'episodeNumber' | 'publishDate' | 'audioUrl' | 'transcript'
+  >,
+  seriesName: string,
+  siteUrl: string,
+): JsonLdNode[] => {
+  const transcriptText = (episode.transcript ?? [])
+    .map((entry) => `${entry.speaker}: ${entry.text}`)
+    .join('\n')
+  return [
+    {
+      '@type': 'PodcastEpisode',
+      name: episode.title,
+      episodeNumber: episode.episodeNumber,
+      datePublished: dateOnly(episode.publishDate),
+      partOfSeries: {
+        '@type': 'PodcastSeries',
+        name: seriesName,
+        url: `${siteUrl}/podcast/`,
+      },
+      ...(episode.audioUrl
+        ? {
+            associatedMedia: {
+              '@type': 'AudioObject',
+              contentUrl: episode.audioUrl,
+            },
+          }
+        : {}),
+      ...(transcriptText ? { transcript: transcriptText } : {}),
+    },
+  ]
+}
+
+// --- Vergleichsseite (Template 2.3): ItemList + Product + Review.
+// Bewusste Zurückhaltung laut Template: KEIN AggregateRating, KEIN
+// offers-Markup; ratingValue = total_score aus der Engine,
+// bestRating 100, Autor = Organization.
+export const comparisonNodes = (
+  comparison: Pick<ComparisonResponse, 'category' | 'products'>,
+  siteUrl: string,
+): JsonLdNode[] => [
+  {
+    '@type': 'ItemList',
+    name: `${comparison.category.name} im Vergleich`,
+    itemListOrder: 'https://schema.org/ItemListOrderDescending',
+    numberOfItems: comparison.products.length,
+    itemListElement: comparison.products.map((product) => ({
+      '@type': 'ListItem',
+      position: product.rank,
+      item: {
+        '@type': 'Product',
+        name: product.name,
+        brand: { '@type': 'Brand', name: product.manufacturer },
+        ...(product.gtin ? { gtin13: product.gtin } : {}),
+        review: {
+          '@type': 'Review',
+          author: { '@id': `${siteUrl}/#org` },
+          datePublished: dateOnly(product.evaluatedAt),
+          reviewRating: {
+            '@type': 'Rating',
+            ratingValue: product.totalScore,
+            bestRating: 100,
+            worstRating: 0,
+          },
+          ...(product.summary ? { reviewBody: product.summary } : {}),
+        },
+      },
+    })),
+  },
+]
+
+// --- Methodik-Seite (Template 2.4): Article-Markup, dateModified =
+// activated_at der Schema-Version — nie Build-Zeitpunkt ------------
+export const methodologyNodes = (
+  category: { slug: string; name: string },
+  version: {
+    version: number
+    activatedAt: string | null
+    createdAt: string
+  },
+  siteUrl: string,
+  pagePath: string,
+): JsonLdNode[] => [
+  {
+    '@type': 'Article',
+    headline: `So bewerten wir ${category.name} (Methodik v${version.version})`,
+    version: `v${version.version}`,
+    publisher: { '@id': `${siteUrl}/#org` },
+    datePublished: dateOnly(version.activatedAt ?? version.createdAt),
+    dateModified: dateOnly(version.activatedAt ?? version.createdAt),
+    mainEntityOfPage: { '@id': `${siteUrl}${pagePath}#page` },
+  },
+]
+
+export const buildGraph = (nodes: JsonLdNode[]): JsonLdNode => ({
+  '@context': 'https://schema.org',
+  '@graph': nodes,
+})
