@@ -1,10 +1,10 @@
 // Zentrale Site-Konstanten. SITE_URL kommt aus dem Environment
-// (Staging/Prod unterschiedlich); der Portalname ist bis zur
-// Naming-Entscheidung ein Platzhalter.
-export const SITE_NAME = 'Portal'
+// (Staging: stage.my-well.com, Prod: my-well.com); der Fallback dient
+// nur lokalen Builds ohne gesetzte Env.
+export const SITE_NAME = 'myWell'
 
 export const SITE_URL = (
-  (import.meta.env?.SITE_URL as string | undefined) ?? 'https://portal.example'
+  (import.meta.env?.SITE_URL as string | undefined) ?? 'https://my-well.com'
 ).replace(/\/$/, '')
 
 export const PODCAST_SERIES_NAME = 'Was ist dran an …?'

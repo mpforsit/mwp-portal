@@ -17,12 +17,22 @@ cms+api, die müssen also zuerst laufen und eine Domain haben.
 
 ---
 
-## 0. Voraussetzungen
+## 0. Voraussetzungen & Domains
+
+Projekt: **myWell**. Domain-Schema (überall unten als konkrete Werte
+eingesetzt):
+
+| Rolle | Staging | Prod |
+| --- | --- | --- |
+| Web (Frontend) | `stage.my-well.com` | `my-well.com` (+ `www`) |
+| CMS (Payload) | `cms.stage.my-well.com` | `cms.my-well.com` |
+| API (Fastify) | `api.stage.my-well.com` | `api.my-well.com` |
 
 - Coolify läuft (Dashboard erreichbar), Admin-Account angelegt.
-- DNS-A-Records auf die Server-IP, z. B. für Staging:
-  `staging.DOMAIN`, `cms-staging.DOMAIN`, `api-staging.DOMAIN`
-  (für Prod analog ohne `-staging`/mit eigener Domain).
+- **DNS-A-Records** auf die Server-IP: die drei Staging-Namen oben.
+  (Ohne DNS kann man vorerst über die von Coolify erzeugte
+  `*.sslip.io`-Adresse testen; für SSL und den web-Build gegen die
+  echten cms/api-URLs sollten die Records aber stehen.)
 - GitHub-Repo in Coolify als Source verbunden
   (Coolify → Sources → GitHub App installieren).
 
@@ -64,13 +74,13 @@ als `DATABASE_URL` in cms und api.
 - **Dockerfile Location:** `apps/cms/Dockerfile`
 - **Base Directory:** `/` (Build-Kontext = Repo-Root, Monorepo!)
 - **Port:** 3000
-- **Domain:** `https://cms-staging.DOMAIN`
+- **Domain:** `https://cms.stage.my-well.com`
 - **Environment-Variablen** (siehe `apps/cms/.env.example`):
   - `DATABASE_URL` = interne Postgres-URL aus Schritt 2
   - `PAYLOAD_SECRET` = `openssl rand -hex 32`
   - `REBUILD_WEBHOOK_URL` = (später, Schritt 6 — web-Deploy-Hook)
   - `INDEXNOW_KEY` = `openssl rand -hex 16` (gleicher Wert wie in web!)
-  - `SITE_URL` = `https://staging.DOMAIN`
+  - `SITE_URL` = `https://stage.my-well.com`
   - **`DATABASE_URL` und `PAYLOAD_SECRET` zusätzlich als „Build
     Variable" markieren** (Payload braucht sie zur Build-Zeit).
 
@@ -81,7 +91,7 @@ als `DATABASE_URL` in cms und api.
 > (`payload migrate:create`) — **offene Folgeaufgabe**, noch nicht im
 > Code umgesetzt. Sag Bescheid, dann baue ich das als eigenen Schritt.
 
-Nach dem ersten Deploy: Admin unter `https://cms-staging.DOMAIN/admin`,
+Nach dem ersten Deploy: Admin unter `https://cms.stage.my-well.com/admin`,
 ersten Nutzer anlegen, dann einen **API-Key** für einen Redaktions-/
 Service-User erzeugen (Payload: User → Enable API Key). Diesen Key
 braucht der web-Build als `PAYLOAD_API_TOKEN`.
@@ -91,10 +101,10 @@ braucht der web-Build als `PAYLOAD_API_TOKEN`.
 **New Resource → Application → Dockerfile**, gleicher Branch/Repo.
 - **Dockerfile Location:** `apps/api/Dockerfile`, **Base Directory:** `/`
 - **Port:** 3001
-- **Domain:** `https://api-staging.DOMAIN`
+- **Domain:** `https://api.stage.my-well.com`
 - **Environment-Variablen** (siehe `apps/api/.env.example`):
   - `DATABASE_URL` = dieselbe interne Postgres-URL
-  - `WEB_ORIGIN` = `https://staging.DOMAIN` (CORS)
+  - `WEB_ORIGIN` = `https://stage.my-well.com` (CORS)
   - `INTERNAL_API_TOKEN` = `openssl rand -hex 32` (schützt /internal/)
   - `ADMIN_USER` / `ADMIN_PASSWORD` = Zugang zum Pflege-Admin
     (`/admin/vergleich`); zusätzlich in Prod netzseitig abschotten
@@ -111,7 +121,7 @@ Optional NUR auf Staging Demodaten:
 ```
 cd /app && pnpm --filter @mwp/db seed
 ```
-Prüfen: `https://api-staging.DOMAIN/api/vergleich` liefert JSON.
+Prüfen: `https://api.stage.my-well.com/api/vergleich` liefert JSON.
 
 ## 6. Web (Astro, statisch)
 
@@ -120,15 +130,15 @@ Prüfen: `https://api-staging.DOMAIN/api/vergleich` liefert JSON.
 - **Install/Build:**
   `corepack enable && pnpm install --frozen-lockfile && pnpm --filter @mwp/web build`
 - **Output Directory:** `apps/web/dist`
-- **Domain:** `https://staging.DOMAIN`
+- **Domain:** `https://stage.my-well.com`
 - **Build-Environment** (siehe `apps/web/.env.example`) — alle zur
   Build-Zeit nötig:
-  - `PAYLOAD_API_URL` = `https://cms-staging.DOMAIN/api`
+  - `PAYLOAD_API_URL` = `https://cms.stage.my-well.com/api`
   - `PAYLOAD_API_TOKEN` = API-Key aus Schritt 3
   - `PAYLOAD_DRAFT_PREVIEW` = `true` für Staging, `false`/leer für Prod
-  - `API_URL` = `https://api-staging.DOMAIN` (Build-Time-Fetch)
-  - `PUBLIC_API_URL` = `https://api-staging.DOMAIN` (im Client sichtbar)
-  - `SITE_URL` = `https://staging.DOMAIN`
+  - `API_URL` = `https://api.stage.my-well.com` (Build-Time-Fetch)
+  - `PUBLIC_API_URL` = `https://api.stage.my-well.com` (im Client sichtbar)
+  - `SITE_URL` = `https://stage.my-well.com`
   - `INDEXNOW_KEY` = derselbe Wert wie im cms
   - `PODIGEE_BASE_URL`, `PUBLIC_SGTM_URL`, `PUBLIC_PLAUSIBLE_*`,
     `PUBLIC_SHOP_HOSTS` = sobald die Dienste stehen (Blöcke aus dem
@@ -158,7 +168,7 @@ Schritte 2–7 im `production`-Environment wiederholen, mit der
 Prod-Domain, `PAYLOAD_DRAFT_PREVIEW` aus, ohne Demo-Seed, eigenen
 Secrets. Cloudflare/CDN davor: **„Block AI bots" AUS** (sonst
 sabotiert es die Crawler-Politik aus `robots.txt`), danach
-`scripts/check-crawlers.sh https://DOMAIN` grün prüfen.
+`scripts/check-crawlers.sh https://my-well.com` grün prüfen.
 
 ---
 
