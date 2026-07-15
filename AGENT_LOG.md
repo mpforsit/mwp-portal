@@ -683,3 +683,45 @@ beachten (Cache mildert; bei Massen-Geocoding Batch mit Pausen).
 aus Phase 1 zu migrieren). Nächster Meilenstein: Phase 3
 (Mess-Loop, Datenpublikationen, Partner-Features) bzw. die
 manuellen Punkte aus Phase 0/1 (Hetzner/Coolify, Domain, Accounts).
+
+## 2026-07-14 — Deployment-Material (Hetzner/Coolify)
+
+**Was:** `docs/deployment.md` (Schritt-für-Schritt durch Coolify:
+Postgres mit postgis-Image, cms/api als Dockerfile-Apps, web als
+Static-Build, Migrationen/Seed, Rebuild-Hook, Auto-Deploy/CI,
+Prod-Wiederholung), Dockerfiles für apps/api und apps/cms
+(Build-Kontext Repo-Root, voller Workspace im Runtime-Image → kein
+Prune, damit Migrationen im Container laufen), `.dockerignore`.
+Frischer Branch von main (PR #1 gemerged).
+**Vorbehalte:** Dockerfiles nicht per docker build getestet
+(Registry im Dev-Sandbox gesperrt) — Validierung beim ersten
+Coolify-Build. Payload-Prod-Migrationen sind noch offen (nur Push/
+Staging dokumentiert) — separate Folgeaufgabe. web nicht als
+Dockerfile, sondern Coolify-Static-Build (kann zur Build-Zeit die
+öffentlichen cms/api-URLs erreichen).
+**Nächster Schritt:** Nach erstem Staging-Deploy: CI-Deploy-Weg
+festlegen (Coolify-Auto-Deploy vs. 3 Webhooks), Payload-Migrationen.
+
+## 2026-07-15 — Naming nachgezogen (myWell / my-well.com)
+
+**Was:** Live-Naming vom Nutzer entschieden (Projekt myWell, Prod
+`my-well.com`, Staging `stage.my-well.com`) und im Code umgesetzt:
+`SITE_NAME` 'Portal' → 'myWell' und `SITE_URL`-Fallback
+`portal.example` → `my-well.com` (`apps/web/src/lib/site.ts`),
+Header-Wortmarke, Startseiten-Titel, `llms.txt`-Überschrift,
+`robots.txt`-Sitemap; Platzhalter-Domain `PORTAL-DOMAIN.de` →
+`my-well.com` in den drei `.env.example` (Brevo-Redirect, sGTM/
+Plausible, CMS SITE_URL). `docs/deployment.md` mit konkreten
+Domains und dem PostGIS-(AMD-only)-Schritt.
+**Begründung:** Chirurgische Textänderung; keine Logik berührt.
+Domains bleiben env-getrieben, Fallback nur für lokale Builds.
+**Verifikation:** `pnpm typecheck` grün (0 Warnungen). `pnpm build`
+lokal erwartungsgemäß ECONNREFUSED (kein lokales API für die
+vergleich-Sitemap) — kein Defekt; erzeugtes dist/ per grep geprüft
+(Titel, robots-Sitemap, WebSite-JSON-LD `name:myWell` korrekt).
+**Vorbehalte:** DB läuft in Coolify (PostGIS 17-3.5-alpine). DNS
+noch nicht verschaltet. Der in der Session gepastete DB-
+Connection-String gehört ausschließlich in Coolify-Env, nie ins
+Repo — bei Bedarf in Coolify rotieren.
+**Nächster Schritt:** CMS-Deploy (deployment.md §3), dann API (§4),
+Migrationen/Seed (§5), web (§6).

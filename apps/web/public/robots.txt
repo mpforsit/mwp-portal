@@ -47,5 +47,4 @@ Disallow: /
 User-agent: *
 Allow: /
 
-# TODO: Domain nach DNS-Umstellung eintragen (Schritt 0.3, manuell)
-Sitemap: https://PORTAL-DOMAIN.de/sitemap-index.xml
+Sitemap: https://my-well.com/sitemap-index.xml
