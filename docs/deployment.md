@@ -37,8 +37,14 @@ dann für Prod wiederholen.
 ## 2. PostgreSQL mit PostGIS  ⚠️ häufigste Stolperstelle
 
 Coolify → im Environment → **New Resource → Database → PostgreSQL**.
-- **Docker-Image auf `postgis/postgis:15-3.4` setzen** (nicht das
-  Default-`postgres`! Sonst fehlt PostGIS und Migration 0004 schlägt fehl).
+- Beim Typ **„PostGIS (AMD only)"** wählen — NICHT das Default-
+  PostgreSQL (das hat keine Extensions, und Migration 0004 braucht
+  PostGIS). Coolify schlägt dann `postgis/postgis:17-3.5-alpine` vor;
+  das passt (PG17 ≥ 15, PostGIS 3.5 hat alle genutzten Funktionen,
+  Alpine betrifft nur den DB-Container).
+- **Achtung x86:** „AMD only" = nur auf x86_64-VMs. Auf einer ARM-VM
+  (Hetzner CAX) startet das Image nicht — dort `uname -m` prüfen und
+  ggf. einen eigenen DB-Service mit einem arm64-PostGIS-Image nehmen.
 - Datenbankname z. B. `portal`. User/Passwort notieren.
 - Deploy. Danach ist die DB nur intern erreichbar (gut so).
 
