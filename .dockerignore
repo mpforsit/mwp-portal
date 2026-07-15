@@ -1,0 +1,13 @@
+# Build-Kontext ist das Repo-Root; das hier muss NICHT ins Image.
+**/node_modules
+**/dist
+**/.next
+**/.astro
+**/build
+**/coverage
+**/*.tsbuildinfo
+.git
+apps/cms/media
+**/.env
+**/.env.*
+!**/.env.example

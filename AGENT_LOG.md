@@ -683,3 +683,21 @@ beachten (Cache mildert; bei Massen-Geocoding Batch mit Pausen).
 aus Phase 1 zu migrieren). Nächster Meilenstein: Phase 3
 (Mess-Loop, Datenpublikationen, Partner-Features) bzw. die
 manuellen Punkte aus Phase 0/1 (Hetzner/Coolify, Domain, Accounts).
+
+## 2026-07-14 — Deployment-Material (Hetzner/Coolify)
+
+**Was:** `docs/deployment.md` (Schritt-für-Schritt durch Coolify:
+Postgres mit postgis-Image, cms/api als Dockerfile-Apps, web als
+Static-Build, Migrationen/Seed, Rebuild-Hook, Auto-Deploy/CI,
+Prod-Wiederholung), Dockerfiles für apps/api und apps/cms
+(Build-Kontext Repo-Root, voller Workspace im Runtime-Image → kein
+Prune, damit Migrationen im Container laufen), `.dockerignore`.
+Frischer Branch von main (PR #1 gemerged).
+**Vorbehalte:** Dockerfiles nicht per docker build getestet
+(Registry im Dev-Sandbox gesperrt) — Validierung beim ersten
+Coolify-Build. Payload-Prod-Migrationen sind noch offen (nur Push/
+Staging dokumentiert) — separate Folgeaufgabe. web nicht als
+Dockerfile, sondern Coolify-Static-Build (kann zur Build-Zeit die
+öffentlichen cms/api-URLs erreichen).
+**Nächster Schritt:** Nach erstem Staging-Deploy: CI-Deploy-Weg
+festlegen (Coolify-Auto-Deploy vs. 3 Webhooks), Payload-Migrationen.
