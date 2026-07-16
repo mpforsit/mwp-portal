@@ -18,6 +18,7 @@ import {
   TransparencySettings,
   Users,
 } from './collections'
+import { migrations } from './migrations'
 
 const dirname = path.dirname(fileURLToPath(import.meta.url))
 
@@ -46,5 +47,8 @@ export default buildConfig({
     // Vergleichs-Engine (siehe Projekt-Kontext).
     schemaName: 'cms',
     pool: { connectionString: process.env.DATABASE_URL ?? '' },
+    // In Produktion (kein Dev-Push) fehlende Migrationen beim Start
+    // automatisch ausführen — legt das cms-Schema samt Tabellen an.
+    prodMigrations: migrations,
   }),
 })

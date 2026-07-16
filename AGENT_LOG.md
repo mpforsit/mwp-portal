@@ -725,3 +725,28 @@ Connection-String gehört ausschließlich in Coolify-Env, nie ins
 Repo — bei Bedarf in Coolify rotieren.
 **Nächster Schritt:** CMS-Deploy (deployment.md §3), dann API (§4),
 Migrationen/Seed (§5), web (§6).
+
+## 2026-07-16 — Payload-Prod-Migration (CMS-Schema)
+
+**Was:** Der erste CMS-Deploy in Coolify lief, aber der Admin warf
+`relation "cms.users" does not exist` (42P01) — Payload v3 pusht das
+Schema im Prod-Build (`next start`) nicht. Fix: initiale Migration
+`apps/cms/src/migrations/20260716_063615_initial.ts` generiert
+(`payload migrate:create`), über `prodMigrations` im Postgres-Adapter
+(`payload.config.ts`) verdrahtet → läuft beim Container-Start
+automatisch. Scripts `migrate` / `migrate:create` in
+`apps/cms/package.json`. deployment.md §3 aktualisiert (Punkt gelöst).
+**Begründung:** `prodMigrations` ist Payloads dokumentierter Weg für
+automatische Migrationen beim Init; sauber auch für Prod (versioniert,
+idempotent) statt Dev-Push produktiv zu erzwingen.
+**Wichtige Korrektur:** Die generierte Migration legt Tabellen in
+`cms.` an, aber NICHT das Schema selbst → manuell
+`CREATE SCHEMA IF NOT EXISTS "cms";` an den Anfang der `up()` ergänzt.
+Ohne das schlägt der erste Lauf mit `schema "cms" does not exist` fehl.
+**Verifikation:** Gegen temporäre lokale Postgres-16-Instanz:
+`payload migrate` legt 22 Tabellen im Schema `cms` an, Eintrag in
+`payload_migrations`; zweiter Lauf ist No-op (idempotent). Typecheck
+grün, alle 7 CMS-Tests grün.
+**Nächster Schritt:** Neu deployen (Coolify → CMS → Deploy). Beim
+Start läuft die Migration; danach `…/admin` → ersten User anlegen →
+API-Key erzeugen. Dann API (§4).
