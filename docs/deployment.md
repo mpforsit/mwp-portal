@@ -155,17 +155,14 @@ Deploy-Webhook. Diese URL als `REBUILD_WEBHOOK_URL` beim cms eintragen
 
 ## 7. Auto-Deploy & CI
 
-Zwei Wege, EINEN wählen:
-- **(empfohlen) Coolify beobachtet `main`:** In jeder App „Automatic
-  Deployment" an. Coolify richtet dafür einen GitHub-Webhook ein. Dann
-  ist der `deploy-staging`-Job in `.github/workflows/ci.yml`
-  überflüssig — Bescheid geben, dann entferne ich ihn.
-- **CI stößt an:** je App-Deploy-Webhook aus Coolify holen. Da wir drei
-  Apps haben, braucht die CI drei URLs statt der einen
-  `COOLIFY_DEPLOY_WEBHOOK` — dann passe ich `ci.yml` entsprechend an.
+**Gewählt: Coolify beobachtet `main` selbst.** In jeder App (cms, api,
+web) ist „Automatic Deployment" aktiv; Coolify nutzt den Webhook der
+GitHub-App. Push/Merge auf `main` → Coolify baut die betroffenen Apps
+neu. Der frühere `deploy-staging`-Job in `.github/workflows/ci.yml`
+wurde deshalb entfernt.
 
-Der `check`-Job der CI (typecheck/lint/test) läuft unabhängig davon
-schon bei jedem PR.
+Der `check`-Job der CI (typecheck/lint/test) läuft unabhängig davon bei
+jedem PR und Push auf `main`.
 
 ## 8. Prod
 
