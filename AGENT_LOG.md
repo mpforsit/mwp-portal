@@ -750,3 +750,21 @@ grün, alle 7 CMS-Tests grün.
 **Nächster Schritt:** Neu deployen (Coolify → CMS → Deploy). Beim
 Start läuft die Migration; danach `…/admin` → ersten User anlegen →
 API-Key erzeugen. Dann API (§4).
+
+## 2026-07-16 — Auto-Deploy: CI-Deploy-Job entfernt
+
+**Was:** Staging läuft vollständig (Postgres/CMS/API/web) über Coolify;
+Auto-Deploy erfolgt über Coolifys „Automatic Deployment" (GitHub-App-
+Webhook) je App. Der `deploy-staging`-Job in `.github/workflows/ci.yml`
+(stieß EINEN COOLIFY_DEPLOY_WEBHOOK an + Smoke-Test) wurde entfernt —
+er stammte aus der Ein-App-Annahme und würde sich mit Coolifys eigenem
+Deploy überschneiden. `check`-Job (typecheck/lint/test) bleibt.
+deployment.md §7 entsprechend aktualisiert.
+**Begründung:** Ein Deploy-Auslöser, nicht zwei. Coolify kennt die drei
+Apps und baut sie gezielt; ein CI-Einzelwebhook könnte das nicht.
+**Vorbehalte:** Secret `COOLIFY_DEPLOY_WEBHOOK` und Variable
+`STAGING_URL` in GitHub werden nicht mehr genutzt (können bleiben oder
+gelöscht werden). Für Prod später denselben „Automatic Deployment"-
+Schalter im production-Environment setzen.
+**Nächster Schritt:** Prod-Environment (§8), Rebuild-Hook ist bereits
+gesetzt (REBUILD_WEBHOOK_URL im CMS).
