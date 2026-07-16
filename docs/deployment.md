@@ -84,12 +84,17 @@ als `DATABASE_URL` in cms und api.
   - **`DATABASE_URL` und `PAYLOAD_SECRET` zusätzlich als „Build
     Variable" markieren** (Payload braucht sie zur Build-Zeit).
 
-> **Payload-Schema (bekannter Punkt):** Payload v3 pusht das Schema in
-> Produktion nicht automatisch. Für Staging pragmatisch: einmalig im
-> cms-Container `pnpm --filter @mwp/cms payload migrate` bzw. Schema-
-> Push aktivieren. Sauber für Prod sind generierte Payload-Migrationen
-> (`payload migrate:create`) — **offene Folgeaufgabe**, noch nicht im
-> Code umgesetzt. Sag Bescheid, dann baue ich das als eigenen Schritt.
+> **Payload-Schema (gelöst):** Payload v3 pusht das Schema in Produktion
+> nicht automatisch. Deshalb liegt eine generierte Migration in
+> `apps/cms/src/migrations/` und ist über `prodMigrations` im
+> Postgres-Adapter (`payload.config.ts`) verdrahtet — sie läuft beim
+> Container-Start automatisch (idempotent) und legt das `cms`-Schema samt
+> Tabellen an. Manuell im cms-Container ginge auch: `pnpm --filter
+> @mwp/cms migrate`. Bei Schema-Änderungen neue Migration erzeugen:
+> `pnpm --filter @mwp/cms migrate:create <name>` (Achtung: bei erster
+> Migration je Schema die Zeile `CREATE SCHEMA IF NOT EXISTS "cms";` in
+> die generierte `up()` aufnehmen — Payload legt das Schema in einer
+> Raw-Migration sonst nicht selbst an).
 
 Nach dem ersten Deploy: Admin unter `https://cms.stage.my-well.com/admin`,
 ersten Nutzer anlegen, dann einen **API-Key** für einen Redaktions-/
