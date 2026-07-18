@@ -768,3 +768,27 @@ gelöscht werden). Für Prod später denselben „Automatic Deployment"-
 Schalter im production-Environment setzen.
 **Nächster Schritt:** Prod-Environment (§8), Rebuild-Hook ist bereits
 gesetzt (REBUILD_WEBHOOK_URL im CMS).
+
+## 2026-07-18 — Ingest-Pipeline Schritt 1: Staging-Schema
+
+**Was:** Neue Backend-Komponente „Ingest" (Faktensondierung aus
+kuratierten Produktseiten, KEINE Bewertung) begonnen. Schritt 1:
+Migration `packages/db/migrations/0005_ingest.sql` — Schema `ingest`,
+getrennt von `vergleich`, mit Tabellen `sources` (kuratierte URLs je
+Kategorie), `snapshots` (unveränderliche Rohabrufe), `attribute_
+suggestions` (beobachtete Attribute, Tor 1), `selected_attributes`
+(bestätigte Keys), `extractions` (normalisierte Fakten je Quelle,
+Freigabe-/Promote-Fluss). Promote-Ziele als FK auf vergleich.categories/
+vergleich.products. Integrationstest `ingest-schema.int.test.ts`.
+**Begründung:** Staging getrennt von der Engine; Rohdaten immutable;
+Fakten getrennt vom Urteil (Engine-Designprinzip). Ingest bewertet
+nichts.
+**Rote Linie (getestet):** Kein FK von `ingest` auf
+`product_evaluations` — Test schlägt fehl, falls doch. Zusätzlich:
+FK-Integrität (Kategorie/Produkt), eine Extraktion pro Quelle.
+**Verifikation:** Migration idempotent (13 DB-Tests grün: vergleich +
+ingest), Typecheck + Lint grün.
+**Nächster Schritt:** `apps/ingest`-Gerüst (Fastify + eigene Admin-UI).
+Offene Dependency-Entscheidungen vor Schritt 4/7: HTML-Parser
+(cheerio/node-html-parser), Anthropic-SDK für LLM-Extraktion,
+Playwright (bereits vorhanden). Rückfrage beim Nutzer.
