@@ -98,6 +98,31 @@ importers:
         specifier: ^3.2.7
         version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(happy-dom@20.10.6)(sass@1.77.4)(tsx@4.23.0)(yaml@2.9.0)
 
+  apps/ingest:
+    dependencies:
+      fastify:
+        specifier: ^5.4.0
+        version: 5.10.0
+      pg:
+        specifier: ^8.22.0
+        version: 8.22.0
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.0
+        version: 22.20.1
+      '@types/pg':
+        specifier: ^8.20.0
+        version: 8.20.0
+      tsx:
+        specifier: ^4.20.0
+        version: 4.23.0
+      typescript:
+        specifier: ^5.8.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.2.0
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.1)(happy-dom@20.10.6)(sass@1.77.4)(tsx@4.23.0)(yaml@2.9.0)
+
   apps/web:
     dependencies:
       '@payloadcms/richtext-lexical':

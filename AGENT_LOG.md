@@ -792,3 +792,26 @@ ingest), Typecheck + Lint grün.
 Offene Dependency-Entscheidungen vor Schritt 4/7: HTML-Parser
 (cheerio/node-html-parser), Anthropic-SDK für LLM-Extraktion,
 Playwright (bereits vorhanden). Rückfrage beim Nutzer.
+
+## 2026-07-18 — Ingest-Pipeline Schritt 2+3: Service-Gerüst & Quellen-Verwaltung
+
+**Was:** Neue App `apps/ingest` (@mwp/ingest) — Fastify-Service nach dem
+Muster von apps/api: `db.ts` (Pool), `auth.ts` (Basic-Auth für /admin,
+eigener Zugang INGEST_ADMIN_*), `html.ts` (server-gerendertes Layout,
+noindex), `sources-repo.ts` (Quellen anlegen/auflisten/aktivieren,
+gekapseltes SQL), `admin.ts` (Quellen-UII: Formular + Tabelle,
+urlencoded-Parser), `index.ts` (Bootstrap + /health). package.json,
+tsconfig(.build), vitest.config, README, .env.example. Deps vorerst nur
+fastify + pg (node-html-parser/@anthropic-ai/sdk kommen in Schritt 4/7,
+wenn genutzt).
+**Begründung:** UI als Modul dieser App (kein Framework, ADR-0002-
+Muster), ein Deployable hinter einer Basic-Auth. URL ist eindeutig →
+addSource dedupliziert (Re-Run harmlos). Kategoriegebunden über FK auf
+vergleich.categories.
+**Verifikation:** Typecheck + Lint grün; 4 Integrationstests grün
+(anlegen, Dedup bei gleicher URL, aktivieren/deaktivieren, Basic-Auth
+401/200); Build kompiliert; Service bootet, /health = ok, /admin ohne
+Credentials korrekt 503.
+**Nächster Schritt:** Schritt 4 — Fetch-Modul (fetch + JSON-LD-Extrakt,
+Rohsnapshot immutable, robots.txt-Check, Rate-Limit). Danach Schritt 5
+(Attribut-Vorschlag) + Tor 1.
