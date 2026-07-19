@@ -3,17 +3,21 @@
 import type { FastifyInstance } from 'fastify'
 
 import { esc, layout } from './html.js'
+import { runSondierung } from './sondierung.js'
+import { latestSnapshots } from './snapshots-repo.js'
 import {
   addSource,
+  getSourceUrl,
   listCategories,
   listSources,
   setSourceActive,
 } from './sources-repo.js'
 
 const sourcesPage = async (): Promise<string> => {
-  const [categories, sources] = await Promise.all([
+  const [categories, sources, snapshots] = await Promise.all([
     listCategories(),
     listSources(),
+    latestSnapshots(),
   ])
 
   const categoryOptions = categories
@@ -37,6 +41,16 @@ const sourcesPage = async (): Promise<string> => {
     : `<p class="muted">Noch keine Kategorie vorhanden. Lege zuerst im
        Pflege-Admin der Vergleichs-Engine eine Kategorie an.</p>`
 
+  const snapshotCell = (id: string): string => {
+    const snap = snapshots.get(id)
+    if (!snap) return '<span class="muted">—</span>'
+    const when = new Date(snap.fetchedAt).toLocaleString('de-DE')
+    const status = snap.ok
+      ? `ok (${snap.jsonldCount}× JSON-LD)`
+      : `Fehler: ${esc(snap.error ?? snap.httpStatus ?? '?')}`
+    return `<span class="muted">${esc(when)}</span><br>${status}`
+  }
+
   const rows = sources
     .map(
       (s) => `<tr class="${s.active ? '' : 'off'}">
@@ -44,17 +58,24 @@ const sourcesPage = async (): Promise<string> => {
         <td><a href="${esc(s.url)}" target="_blank" rel="noopener">${esc(s.url)}</a></td>
         <td>${esc(s.label ?? '')}</td>
         <td>${s.active ? 'aktiv' : 'inaktiv'}</td>
-        <td><form method="post" action="/admin/sources/${esc(s.id)}/toggle">
-          <input type="hidden" name="active" value="${s.active ? 'false' : 'true'}">
-          <button type="submit">${s.active ? 'deaktivieren' : 'aktivieren'}</button>
-        </form></td>
+        <td>${snapshotCell(s.id)}</td>
+        <td>
+          <form method="post" action="/admin/sources/${esc(s.id)}/fetch">
+            <button type="submit">sondieren</button>
+          </form>
+          <form method="post" action="/admin/sources/${esc(s.id)}/toggle">
+            <input type="hidden" name="active" value="${s.active ? 'false' : 'true'}">
+            <button type="submit">${s.active ? 'deaktivieren' : 'aktivieren'}</button>
+          </form>
+        </td>
       </tr>`,
     )
     .join('')
 
   const table = sources.length
     ? `<table><thead><tr>
-        <th>Kategorie</th><th>URL</th><th>Bezeichnung</th><th>Status</th><th></th>
+        <th>Kategorie</th><th>URL</th><th>Bezeichnung</th><th>Status</th>
+        <th>Letzter Abruf</th><th></th>
        </tr></thead><tbody>${rows}</tbody></table>`
     : '<p class="muted">Noch keine Quellen angelegt.</p>'
 
@@ -97,6 +118,16 @@ export const registerAdmin = (app: FastifyInstance): void => {
     '/admin/sources/:id/toggle',
     async (req, reply) => {
       await setSourceActive(req.params.id, req.body.active === 'true')
+      reply.redirect('/admin/sources', 303)
+    },
+  )
+
+  app.post<{ Params: { id: string } }>(
+    '/admin/sources/:id/fetch',
+    async (req, reply) => {
+      const url = await getSourceUrl(req.params.id)
+      if (!url) return reply.status(404).send('Quelle nicht gefunden.')
+      await runSondierung(req.params.id, url)
       reply.redirect('/admin/sources', 303)
     },
   )

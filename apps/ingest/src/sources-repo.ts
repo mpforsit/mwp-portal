@@ -61,6 +61,14 @@ export const addSource = async (
   return { id: existingId, created: false }
 }
 
+export const getSourceUrl = async (id: string): Promise<string | null> => {
+  const { rows } = await getPool().query(
+    'select url from ingest.sources where id = $1',
+    [id],
+  )
+  return (rows[0]?.url as string | undefined) ?? null
+}
+
 export const setSourceActive = async (
   id: string,
   active: boolean,

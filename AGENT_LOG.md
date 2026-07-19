@@ -815,3 +815,24 @@ Credentials korrekt 503.
 **Nächster Schritt:** Schritt 4 — Fetch-Modul (fetch + JSON-LD-Extrakt,
 Rohsnapshot immutable, robots.txt-Check, Rate-Limit). Danach Schritt 5
 (Attribut-Vorschlag) + Tor 1.
+
+## 2026-07-18 — Ingest-Pipeline Schritt 4: Fetch-Modul & Snapshots
+
+**Was:** Abruf kuratierter Produktseiten. `robots.txt`-Parser
+(`robots.ts`, längster-Pfad-Match, Allow>Disallow), `fetcher.ts`
+(ehrlicher User-Agent `myWellIngestBot/1.0`, Timeout via
+AbortController, JSON-LD-Extraktion mit node-html-parser, sha256-Hash;
+`fetch` injizierbar für netzfreie Tests; wirft nicht — Fehler als
+ok=false+error), `snapshots-repo.ts` (insert-only + latestSnapshots),
+`sondierung.ts` (Abruf→Persistenz). UI: „sondieren"-Button je Quelle +
+Spalte „Letzter Abruf" (Status/JSON-LD-Anzahl). Dependency
+node-html-parser ergänzt.
+**Begründung:** robots.txt-Höflichkeit vor jedem Abruf (rechtlicher
+Rahmen). Snapshots unveränderlich (insert-only, Beleg/Reproduzierbar-
+keit). Reine Extraktion getrennt von DB/Netz → gut testbar.
+**Verifikation:** 15 Tests grün (Quellen 4, Fetcher-Unit 9: JSON-LD/
+robots/Sondierung inkl. Disallow + Netzfehler, Sondierung-Integration
+2), Typecheck + Lint grün.
+**Nächster Schritt:** Schritt 5 — lose Attribut-Sondierung (JSON-LD/
+Spec-Parse + leichte LLM-Sichtung) → Attribut-Vorschlag je Kategorie
+(attribute_suggestions) + Tor 1 (Auswahl). Hier kommt @anthropic-ai/sdk.
