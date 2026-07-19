@@ -890,3 +890,24 @@ Kategoriegebundene Aggregationstests nutzen jetzt eigene Kategorien
 **Nächster Schritt:** Schritt 8 — Tor 2 (Abnahme) + Promote der Drafts
 nach vergleich.products (Dedup via gtin/url), KEIN Schreibzugriff auf
 product_evaluations (rote-Linie-Test). Dann Schritt 9 (Re-Run) und PR.
+
+## 2026-07-18 — Ingest-Pipeline Schritt 8: Tor 2 (Abnahme) + Promote
+
+**Was:** Freigabe-Fluss und Übernahme nach vergleich.products.
+`extractions-repo`: setExtractionStatus (draft→approved/rejected).
+`promote.ts` (gekapseltes Adapter-Modul, transaktional): promoteExtraction
+— nur 'approved', Name erforderlich, Slug-Erzeugung (umlautfest, eindeutig
+per -2/-3…), Dedup über GTIN in der Kategorie (aktualisiert statt
+dupliziert), verlinkt promoted_product_id, Status→promoted.
+`admin-extractions`: Aktionsspalte (freigeben/ablehnen/übernehmen) +
+Routen /admin/extractions/e/:id/{approve,reject,promote}.
+**Rote Linie (getestet):** Promote schreibt ausschließlich nach
+vergleich.products — Test prüft, dass für das erzeugte Produkt KEINE
+Zeile in product_evaluations entsteht. Bewertung bleibt im redaktionellen
+Pflege-Workflow.
+**Verifikation:** 34 Tests grün (Promote legt Produkt an + verlinkt
+Extraktion, rote-Linie 0 evaluations, GTIN-Dedup aktualisiert statt
+dupliziert, nur abgenommene übernehmbar). Typecheck + Lint grün, Build ok.
+**Nächster Schritt:** Schritt 9 — inkrementeller Re-Run als Ende-zu-Ende-
+Nachweis (neue URL ergänzen → sondieren → extrahieren → übernehmen ohne
+Duplikate). Danach PR für den MVP.

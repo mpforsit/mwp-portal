@@ -3,9 +3,14 @@
 import type { FastifyInstance } from 'fastify'
 
 import { extractForCategory } from './extraction.js'
-import { listExtractions, type ExtractionRow } from './extractions-repo.js'
+import {
+  listExtractions,
+  setExtractionStatus,
+  type ExtractionRow,
+} from './extractions-repo.js'
 import { esc, layout } from './html.js'
 import { createFactExtractor } from './llm.js'
+import { promoteExtraction, PromoteError } from './promote.js'
 import { listCategories } from './sources-repo.js'
 
 const attrCell = (row: ExtractionRow): string => {
@@ -29,9 +34,19 @@ const extractionsPage = async (notice?: string): Promise<string> => {
 
   for (const c of categories) {
     const rows = await listExtractions(c.id)
+    const actions = (r: ExtractionRow): string => {
+      const act = (verb: string, label: string): string =>
+        `<form method="post" action="/admin/extractions/e/${esc(r.id)}/${verb}">
+           <button type="submit">${label}</button></form>`
+      if (r.status === 'draft') return act('approve', 'freigeben') + act('reject', 'ablehnen')
+      if (r.status === 'approved') return act('promote', 'übernehmen') + act('reject', 'ablehnen')
+      if (r.status === 'promoted') return '<span class="muted">übernommen</span>'
+      return act('approve', 'doch freigeben')
+    }
+
     const body = rows.length
       ? `<table><thead><tr>
-           <th>Produkt</th><th>Hersteller</th><th>GTIN</th><th>Fakten (Confidence)</th><th>Status</th>
+           <th>Produkt</th><th>Hersteller</th><th>GTIN</th><th>Fakten (Confidence)</th><th>Status</th><th></th>
          </tr></thead><tbody>${rows
            .map(
              (r) => `<tr>
@@ -40,6 +55,7 @@ const extractionsPage = async (notice?: string): Promise<string> => {
                <td>${esc(r.gtin ?? '')}</td>
                <td>${attrCell(r)}</td>
                <td>${esc(r.status)}</td>
+               <td>${actions(r)}</td>
              </tr>`,
            )
            .join('')}</tbody></table>`
@@ -76,6 +92,39 @@ export const registerAdminExtractions = (app: FastifyInstance): void => {
         notice = `${count} Quelle(n) extrahiert.`
       } catch (err) {
         notice = err instanceof Error ? err.message : 'Fehler bei der Extraktion.'
+      }
+      reply.type('text/html').send(await extractionsPage(notice))
+    },
+  )
+
+  // Tor 2: freigeben / ablehnen
+  app.post<{ Params: { id: string; verb: 'approve' | 'reject' } }>(
+    '/admin/extractions/e/:id/:verb',
+    async (req, reply) => {
+      const { id, verb } = req.params
+      if (verb === 'approve') await setExtractionStatus(id, 'approved')
+      else if (verb === 'reject') await setExtractionStatus(id, 'rejected')
+      reply.redirect('/admin/extractions', 303)
+    },
+  )
+
+  // Promote nach vergleich.products
+  app.post<{ Params: { id: string } }>(
+    '/admin/extractions/e/:id/promote',
+    async (req, reply) => {
+      let notice: string
+      try {
+        const { productId, created } = await promoteExtraction(req.params.id)
+        notice = created
+          ? `Neues Produkt angelegt (${productId}).`
+          : `Bestehendes Produkt aktualisiert (${productId}).`
+      } catch (err) {
+        notice =
+          err instanceof PromoteError
+            ? err.message
+            : err instanceof Error
+              ? err.message
+              : 'Fehler beim Übernehmen.'
       }
       reply.type('text/html').send(await extractionsPage(notice))
     },

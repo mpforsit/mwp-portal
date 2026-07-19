@@ -71,3 +71,14 @@ export const listExtractions = async (
   )
   return rows as ExtractionRow[]
 }
+
+// Setzt den Freigabe-Status (Tor 2: draft → approved / rejected).
+export const setExtractionStatus = async (
+  id: string,
+  status: 'draft' | 'approved' | 'rejected',
+): Promise<void> => {
+  await getPool().query(
+    'update ingest.extractions set status = $2, updated_at = now() where id = $1',
+    [id, status],
+  )
+}
