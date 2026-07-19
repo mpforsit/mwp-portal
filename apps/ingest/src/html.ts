@@ -23,5 +23,8 @@ export const layout = (title: string, body: string): string => `<!doctype html>
   nav{margin-bottom:1.5rem}
   button{cursor:pointer}
 </style></head>
-<body><nav><a href="/admin/sources">Quellen</a></nav>
+<body><nav>
+<a href="/admin/sources">Quellen</a> ·
+<a href="/admin/attributes">Attribute</a>
+</nav>
 ${body}</body></html>`

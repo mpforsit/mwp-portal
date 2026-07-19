@@ -836,3 +836,30 @@ robots/Sondierung inkl. Disallow + Netzfehler, Sondierung-Integration
 **Nächster Schritt:** Schritt 5 — lose Attribut-Sondierung (JSON-LD/
 Spec-Parse + leichte LLM-Sichtung) → Attribut-Vorschlag je Kategorie
 (attribute_suggestions) + Tor 1 (Auswahl). Hier kommt @anthropic-ai/sdk.
+
+## 2026-07-18 — Ingest-Pipeline Schritt 5: Attribut-Sondierung + Tor 1
+
+**Was:** LLM-gestützte Attribut-Sondierung. `llm.ts` (@anthropic-ai/sdk,
+Modell claude-opus-4-8; injizierbarer AttributeExtractor; toleranter
+JSON-Parser mit Codefence-Handling; createExtractor wirft ohne
+ANTHROPIC_API_KEY), `attributes.ts` (reine Aggregation: Häufigkeit je
+Quelle + Beispiele, häufigste zuerst), `attribute-suggestions-repo.ts`
+(replaceSuggestions/listSuggestions + selected_attributes set/list,
+transaktional), `discovery.ts` (snapshotToText aus JSON-LD+Seitentext,
+proposeAttributes über latestContentForCategory, Extraktor injizierbar),
+`admin-attributes.ts` (Tor-1-UI: „Attribute vorschlagen" je Kategorie +
+Checkbox-Auswahl speichern). urlencoded-Parser für wiederholte Felder
+(Checkbox-Gruppen) zu Array erweitert. Dependency @anthropic-ai/sdk.
+**Begründung:** Fakten getrennt vom Urteil — die Sondierung schlägt nur
+beobachtete Attribute vor; Gewichte/Scoring bleiben redaktionell. LLM
+extrahiert, Aggregation/Persistenz deterministisch im Code. Extraktor
+injizierbar → Tests ohne Netz/API.
+**Verifikation:** 21 Tests grün (u. a. Aggregation zählt je Quelle
+einmal, JSON-Toleranz, Discovery-Integration mit gemocktem Extraktor +
+geseedeten Snapshots, Tor-1-Auswahl ersetzt vollständig). Typecheck +
+Lint grün, Build kompiliert. Vor LLM-Code claude-api-Referenz geladen
+(korrekte Modell-ID/Aufrufe).
+**Nächster Schritt:** Schritt 7 — gezielte LLM-Extraktion gegen die
+bestätigten Attribut-Keys + deterministische Normalisierung (µg↔IE,
+Preis), Confidence/Provenienz, Draft in ingest.extractions. Dann Tor 2
+(Abnahme) + Promote nach vergleich.products (Schritt 8).

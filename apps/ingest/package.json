@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.69.0",
     "fastify": "^5.4.0",
     "node-html-parser": "^7.0.1",
     "pg": "^8.22.0"

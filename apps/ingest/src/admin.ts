@@ -92,12 +92,19 @@ interface ToggleBody {
 }
 
 export const registerAdmin = (app: FastifyInstance): void => {
-  // Formulare kommen urlencoded — kleiner Parser statt @fastify/formbody
+  // Formulare kommen urlencoded — kleiner Parser statt @fastify/formbody.
+  // Wiederholte Felder (Checkbox-Gruppen) werden zu einem Array.
   app.addContentTypeParser(
     'application/x-www-form-urlencoded',
     { parseAs: 'string' },
     (_req, body, done) => {
-      done(null, Object.fromEntries(new URLSearchParams(body as string)))
+      const params = new URLSearchParams(body as string)
+      const obj: Record<string, string | string[]> = {}
+      for (const key of new Set(params.keys())) {
+        const all = params.getAll(key)
+        obj[key] = all.length > 1 ? all : (all[0] ?? '')
+      }
+      done(null, obj)
     },
   )
 

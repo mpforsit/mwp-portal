@@ -35,6 +35,33 @@ export interface LatestSnapshot {
   jsonldCount: number
 }
 
+export interface SnapshotContent {
+  sourceId: string
+  jsonld: unknown[]
+  rawHtml: string | null
+}
+
+// Neuester ERFOLGREICHER Snapshot je aktiver Quelle einer Kategorie —
+// Grundlage für die Attribut-Sondierung.
+export const latestContentForCategory = async (
+  categoryId: string,
+): Promise<SnapshotContent[]> => {
+  const { rows } = await getPool().query(
+    `select distinct on (sn.source_id)
+       sn.source_id as "sourceId", sn.jsonld, sn.raw_html as "rawHtml"
+     from ingest.snapshots sn
+     join ingest.sources s on s.id = sn.source_id
+     where s.category_id = $1 and s.active and sn.ok
+     order by sn.source_id, sn.fetched_at desc`,
+    [categoryId],
+  )
+  return rows.map((r) => ({
+    sourceId: r.sourceId as string,
+    jsonld: (r.jsonld as unknown[]) ?? [],
+    rawHtml: r.rawHtml as string | null,
+  }))
+}
+
 // Neuester Snapshot je Quelle (für die Statusanzeige in der UI).
 export const latestSnapshots = async (): Promise<Map<string, LatestSnapshot>> => {
   const { rows } = await getPool().query(
