@@ -768,3 +768,167 @@ gelöscht werden). Für Prod später denselben „Automatic Deployment"-
 Schalter im production-Environment setzen.
 **Nächster Schritt:** Prod-Environment (§8), Rebuild-Hook ist bereits
 gesetzt (REBUILD_WEBHOOK_URL im CMS).
+
+## 2026-07-18 — Ingest-Pipeline Schritt 1: Staging-Schema
+
+**Was:** Neue Backend-Komponente „Ingest" (Faktensondierung aus
+kuratierten Produktseiten, KEINE Bewertung) begonnen. Schritt 1:
+Migration `packages/db/migrations/0005_ingest.sql` — Schema `ingest`,
+getrennt von `vergleich`, mit Tabellen `sources` (kuratierte URLs je
+Kategorie), `snapshots` (unveränderliche Rohabrufe), `attribute_
+suggestions` (beobachtete Attribute, Tor 1), `selected_attributes`
+(bestätigte Keys), `extractions` (normalisierte Fakten je Quelle,
+Freigabe-/Promote-Fluss). Promote-Ziele als FK auf vergleich.categories/
+vergleich.products. Integrationstest `ingest-schema.int.test.ts`.
+**Begründung:** Staging getrennt von der Engine; Rohdaten immutable;
+Fakten getrennt vom Urteil (Engine-Designprinzip). Ingest bewertet
+nichts.
+**Rote Linie (getestet):** Kein FK von `ingest` auf
+`product_evaluations` — Test schlägt fehl, falls doch. Zusätzlich:
+FK-Integrität (Kategorie/Produkt), eine Extraktion pro Quelle.
+**Verifikation:** Migration idempotent (13 DB-Tests grün: vergleich +
+ingest), Typecheck + Lint grün.
+**Nächster Schritt:** `apps/ingest`-Gerüst (Fastify + eigene Admin-UI).
+Offene Dependency-Entscheidungen vor Schritt 4/7: HTML-Parser
+(cheerio/node-html-parser), Anthropic-SDK für LLM-Extraktion,
+Playwright (bereits vorhanden). Rückfrage beim Nutzer.
+
+## 2026-07-18 — Ingest-Pipeline Schritt 2+3: Service-Gerüst & Quellen-Verwaltung
+
+**Was:** Neue App `apps/ingest` (@mwp/ingest) — Fastify-Service nach dem
+Muster von apps/api: `db.ts` (Pool), `auth.ts` (Basic-Auth für /admin,
+eigener Zugang INGEST_ADMIN_*), `html.ts` (server-gerendertes Layout,
+noindex), `sources-repo.ts` (Quellen anlegen/auflisten/aktivieren,
+gekapseltes SQL), `admin.ts` (Quellen-UII: Formular + Tabelle,
+urlencoded-Parser), `index.ts` (Bootstrap + /health). package.json,
+tsconfig(.build), vitest.config, README, .env.example. Deps vorerst nur
+fastify + pg (node-html-parser/@anthropic-ai/sdk kommen in Schritt 4/7,
+wenn genutzt).
+**Begründung:** UI als Modul dieser App (kein Framework, ADR-0002-
+Muster), ein Deployable hinter einer Basic-Auth. URL ist eindeutig →
+addSource dedupliziert (Re-Run harmlos). Kategoriegebunden über FK auf
+vergleich.categories.
+**Verifikation:** Typecheck + Lint grün; 4 Integrationstests grün
+(anlegen, Dedup bei gleicher URL, aktivieren/deaktivieren, Basic-Auth
+401/200); Build kompiliert; Service bootet, /health = ok, /admin ohne
+Credentials korrekt 503.
+**Nächster Schritt:** Schritt 4 — Fetch-Modul (fetch + JSON-LD-Extrakt,
+Rohsnapshot immutable, robots.txt-Check, Rate-Limit). Danach Schritt 5
+(Attribut-Vorschlag) + Tor 1.
+
+## 2026-07-18 — Ingest-Pipeline Schritt 4: Fetch-Modul & Snapshots
+
+**Was:** Abruf kuratierter Produktseiten. `robots.txt`-Parser
+(`robots.ts`, längster-Pfad-Match, Allow>Disallow), `fetcher.ts`
+(ehrlicher User-Agent `myWellIngestBot/1.0`, Timeout via
+AbortController, JSON-LD-Extraktion mit node-html-parser, sha256-Hash;
+`fetch` injizierbar für netzfreie Tests; wirft nicht — Fehler als
+ok=false+error), `snapshots-repo.ts` (insert-only + latestSnapshots),
+`sondierung.ts` (Abruf→Persistenz). UI: „sondieren"-Button je Quelle +
+Spalte „Letzter Abruf" (Status/JSON-LD-Anzahl). Dependency
+node-html-parser ergänzt.
+**Begründung:** robots.txt-Höflichkeit vor jedem Abruf (rechtlicher
+Rahmen). Snapshots unveränderlich (insert-only, Beleg/Reproduzierbar-
+keit). Reine Extraktion getrennt von DB/Netz → gut testbar.
+**Verifikation:** 15 Tests grün (Quellen 4, Fetcher-Unit 9: JSON-LD/
+robots/Sondierung inkl. Disallow + Netzfehler, Sondierung-Integration
+2), Typecheck + Lint grün.
+**Nächster Schritt:** Schritt 5 — lose Attribut-Sondierung (JSON-LD/
+Spec-Parse + leichte LLM-Sichtung) → Attribut-Vorschlag je Kategorie
+(attribute_suggestions) + Tor 1 (Auswahl). Hier kommt @anthropic-ai/sdk.
+
+## 2026-07-18 — Ingest-Pipeline Schritt 5: Attribut-Sondierung + Tor 1
+
+**Was:** LLM-gestützte Attribut-Sondierung. `llm.ts` (@anthropic-ai/sdk,
+Modell claude-opus-4-8; injizierbarer AttributeExtractor; toleranter
+JSON-Parser mit Codefence-Handling; createExtractor wirft ohne
+ANTHROPIC_API_KEY), `attributes.ts` (reine Aggregation: Häufigkeit je
+Quelle + Beispiele, häufigste zuerst), `attribute-suggestions-repo.ts`
+(replaceSuggestions/listSuggestions + selected_attributes set/list,
+transaktional), `discovery.ts` (snapshotToText aus JSON-LD+Seitentext,
+proposeAttributes über latestContentForCategory, Extraktor injizierbar),
+`admin-attributes.ts` (Tor-1-UI: „Attribute vorschlagen" je Kategorie +
+Checkbox-Auswahl speichern). urlencoded-Parser für wiederholte Felder
+(Checkbox-Gruppen) zu Array erweitert. Dependency @anthropic-ai/sdk.
+**Begründung:** Fakten getrennt vom Urteil — die Sondierung schlägt nur
+beobachtete Attribute vor; Gewichte/Scoring bleiben redaktionell. LLM
+extrahiert, Aggregation/Persistenz deterministisch im Code. Extraktor
+injizierbar → Tests ohne Netz/API.
+**Verifikation:** 21 Tests grün (u. a. Aggregation zählt je Quelle
+einmal, JSON-Toleranz, Discovery-Integration mit gemocktem Extraktor +
+geseedeten Snapshots, Tor-1-Auswahl ersetzt vollständig). Typecheck +
+Lint grün, Build kompiliert. Vor LLM-Code claude-api-Referenz geladen
+(korrekte Modell-ID/Aufrufe).
+**Nächster Schritt:** Schritt 7 — gezielte LLM-Extraktion gegen die
+bestätigten Attribut-Keys + deterministische Normalisierung (µg↔IE,
+Preis), Confidence/Provenienz, Draft in ingest.extractions. Dann Tor 2
+(Abnahme) + Promote nach vergleich.products (Schritt 8).
+
+## 2026-07-18 — Ingest-Pipeline Schritt 7: Gezielte Extraktion + Normalisierung
+
+**Was:** Faktenextraktion gegen die bestätigten Attribut-Keys (Tor 1).
+`llm.ts` um FactExtractor erweitert (createFactExtractor, parseFacts:
+nur erlaubte Keys, confidence auf 0..1 geclampt, name/manufacturer/gtin;
+gemeinsame API-Helfer requireClient/complete). `normalize.ts` (rein,
+getestet): parseNumber (de „1.234,56"/„9,90" + en), normalizeValue mit
+µg→IE (×40, Vitamin D) und Preis→Cent. `extractions-repo.ts` (upsert
+Draft je Quelle, on conflict → status zurück auf draft, promoted_
+product_id=null; listExtractions). `extraction.ts` (extractForCategory:
+je Quelle Fakten ziehen, deterministisch normalisieren, Confidence +
+Provenienz je Feld inkl. _source_url, Draft ablegen; wirft
+NoSelectedAttributesError ohne Tor-1-Auswahl). `admin-extractions.ts`
+(Extraktions-Trigger + Draft-Ansicht mit Normalisierung/Confidence).
+**Begründung:** LLM extrahiert nur Rohwerte; Umrechnung/Preis
+deterministisch im Code (kein Halluzinieren von Zahlen). Confidence +
+Textbeleg je Feld für die spätere Abnahme (Tor 2). Extraktor injizierbar
+→ Tests ohne Netz.
+**Verifikation:** 31 Tests grün (Normalisierung µg→IE/Preis→Cent/
+Zahlparser, parseFacts-Key-Filter+Clamp, Extraktions-Integration mit
+gemocktem Extraktor). Typecheck + Lint grün, Build kompiliert.
+Kategoriegebundene Aggregationstests nutzen jetzt eigene Kategorien
+(Isolation zwischen Testdateien).
+**Nächster Schritt:** Schritt 8 — Tor 2 (Abnahme) + Promote der Drafts
+nach vergleich.products (Dedup via gtin/url), KEIN Schreibzugriff auf
+product_evaluations (rote-Linie-Test). Dann Schritt 9 (Re-Run) und PR.
+
+## 2026-07-18 — Ingest-Pipeline Schritt 8: Tor 2 (Abnahme) + Promote
+
+**Was:** Freigabe-Fluss und Übernahme nach vergleich.products.
+`extractions-repo`: setExtractionStatus (draft→approved/rejected).
+`promote.ts` (gekapseltes Adapter-Modul, transaktional): promoteExtraction
+— nur 'approved', Name erforderlich, Slug-Erzeugung (umlautfest, eindeutig
+per -2/-3…), Dedup über GTIN in der Kategorie (aktualisiert statt
+dupliziert), verlinkt promoted_product_id, Status→promoted.
+`admin-extractions`: Aktionsspalte (freigeben/ablehnen/übernehmen) +
+Routen /admin/extractions/e/:id/{approve,reject,promote}.
+**Rote Linie (getestet):** Promote schreibt ausschließlich nach
+vergleich.products — Test prüft, dass für das erzeugte Produkt KEINE
+Zeile in product_evaluations entsteht. Bewertung bleibt im redaktionellen
+Pflege-Workflow.
+**Verifikation:** 34 Tests grün (Promote legt Produkt an + verlinkt
+Extraktion, rote-Linie 0 evaluations, GTIN-Dedup aktualisiert statt
+dupliziert, nur abgenommene übernehmbar). Typecheck + Lint grün, Build ok.
+**Nächster Schritt:** Schritt 9 — inkrementeller Re-Run als Ende-zu-Ende-
+Nachweis (neue URL ergänzen → sondieren → extrahieren → übernehmen ohne
+Duplikate). Danach PR für den MVP.
+
+## 2026-07-18 — Ingest-Pipeline Schritt 9: inkrementeller Re-Run + Deploy
+
+**Was:** Ende-zu-Ende-Test (`incremental.int.test.ts`): erste Quelle
+komplett durch die Kette (Quelle→Sondierung→Tor1→Extraktion→Tor2→
+Promote = 1 Produkt), dann zweite Quelle später ergänzt → erneute
+Extraktion setzt bestehende auf draft zurück, Produkt bleibt bestehen
+(kein Duplikat), Re-Promote dedupliziert über GTIN, B ergibt neues
+Produkt (2 gesamt, keine Duplikate). Dazu `apps/ingest/Dockerfile`
+(Muster wie api, Port 3002) + deployment.md §9 (interner Ingest-Service,
+nur hinter Basic-Auth, ANTHROPIC_API_KEY als Secret).
+**Begründung:** Die inkrementelle Arbeitsweise (Markt ändert sich, URLs
+nachpflegen) ist der zentrale Nutzungsfall; der E2E-Test sichert ab,
+dass Nachpflegen nichts dupliziert/zerstört.
+**Verifikation:** 36 Tests grün (gesamte Ingest-Suite), Typecheck +
+Lint grün, Build kompiliert.
+**MVP komplett** (Schritte 1–9). Nächster Schritt: PR für die Ingest-
+Pipeline. Offene Folgeaufgaben: Attribut-Labels sauber durchreichen
+(aktuell key=label), erneute Extraktion könnte bereits übernommene &
+unveränderte Quellen überspringen (derzeit immer draft-Reset), Playwright
+für JS-gerenderte Seiten bei Bedarf.
