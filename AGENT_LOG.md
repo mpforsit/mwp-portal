@@ -911,3 +911,24 @@ dupliziert, nur abgenommene übernehmbar). Typecheck + Lint grün, Build ok.
 **Nächster Schritt:** Schritt 9 — inkrementeller Re-Run als Ende-zu-Ende-
 Nachweis (neue URL ergänzen → sondieren → extrahieren → übernehmen ohne
 Duplikate). Danach PR für den MVP.
+
+## 2026-07-18 — Ingest-Pipeline Schritt 9: inkrementeller Re-Run + Deploy
+
+**Was:** Ende-zu-Ende-Test (`incremental.int.test.ts`): erste Quelle
+komplett durch die Kette (Quelle→Sondierung→Tor1→Extraktion→Tor2→
+Promote = 1 Produkt), dann zweite Quelle später ergänzt → erneute
+Extraktion setzt bestehende auf draft zurück, Produkt bleibt bestehen
+(kein Duplikat), Re-Promote dedupliziert über GTIN, B ergibt neues
+Produkt (2 gesamt, keine Duplikate). Dazu `apps/ingest/Dockerfile`
+(Muster wie api, Port 3002) + deployment.md §9 (interner Ingest-Service,
+nur hinter Basic-Auth, ANTHROPIC_API_KEY als Secret).
+**Begründung:** Die inkrementelle Arbeitsweise (Markt ändert sich, URLs
+nachpflegen) ist der zentrale Nutzungsfall; der E2E-Test sichert ab,
+dass Nachpflegen nichts dupliziert/zerstört.
+**Verifikation:** 36 Tests grün (gesamte Ingest-Suite), Typecheck +
+Lint grün, Build kompiliert.
+**MVP komplett** (Schritte 1–9). Nächster Schritt: PR für die Ingest-
+Pipeline. Offene Folgeaufgaben: Attribut-Labels sauber durchreichen
+(aktuell key=label), erneute Extraktion könnte bereits übernommene &
+unveränderte Quellen überspringen (derzeit immer draft-Reset), Playwright
+für JS-gerenderte Seiten bei Bedarf.

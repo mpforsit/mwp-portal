@@ -172,6 +172,29 @@ Secrets. Cloudflare/CDN davor: **„Block AI bots" AUS** (sonst
 sabotiert es die Crawler-Politik aus `robots.txt`), danach
 `scripts/check-crawlers.sh https://my-well.com` grün prüfen.
 
+## 9. Ingest-Service (optional, interne Datenpflege)
+
+Die Ingest-Pipeline (`apps/ingest`) sondiert Fakten aus kuratierten
+Produktseiten und übernimmt sie nach `vergleich.products` (bewertet
+nichts). Sie ist ein internes Werkzeug — **nicht öffentlich**.
+
+**New Resource → Application → Dockerfile**, gleicher Branch/Repo.
+- **Dockerfile Location:** `apps/ingest/Dockerfile`, **Base Directory:** `/`
+- **Port:** 3002
+- **Domain:** intern halten (z. B. `ingest.stage.my-well.com` **mit
+  Basic-Auth davor**, wie die übrigen Stage-Hosts) — nie ohne Zugriffs-
+  schutz veröffentlichen.
+- **Environment-Variablen** (siehe `apps/ingest/.env.example`):
+  - `DATABASE_URL` = dieselbe interne Postgres-URL (Schema `ingest` +
+    lesend/promotend `vergleich`)
+  - `INGEST_ADMIN_USER` / `INGEST_ADMIN_PASSWORD` = Zugang zum Ingest-Admin
+  - `ANTHROPIC_API_KEY` = für die LLM-Extraktion (leer = Extraktion
+    deaktiviert); **nie ins Repo**
+
+Das `ingest`-Schema legt die DB-Migration `0005_ingest.sql` an (läuft mit
+`pnpm --filter @mwp/db migrate`, Schritt 5). Admin unter
+`https://…/admin/sources`.
+
 ---
 
 ## Hinweis zu diesen Dateien
