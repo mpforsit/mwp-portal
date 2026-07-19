@@ -25,6 +25,7 @@ export const layout = (title: string, body: string): string => `<!doctype html>
 </style></head>
 <body><nav>
 <a href="/admin/sources">Quellen</a> ·
-<a href="/admin/attributes">Attribute</a>
+<a href="/admin/attributes">Attribute</a> ·
+<a href="/admin/extractions">Extraktion</a>
 </nav>
 ${body}</body></html>`

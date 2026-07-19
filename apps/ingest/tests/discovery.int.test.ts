@@ -8,12 +8,12 @@ import {
   listSuggestions,
   setSelectedAttributes,
 } from '../src/attribute-suggestions-repo.js'
-import { closePool } from '../src/db.js'
+import { closePool, getPool } from '../src/db.js'
 import { proposeAttributes } from '../src/discovery.js'
 import type { AttributeExtractor } from '../src/llm.js'
 import { runSondierung } from '../src/sondierung.js'
 import type { FetchLike } from '../src/fetcher.js'
-import { addSource, listCategories } from '../src/sources-repo.js'
+import { addSource } from '../src/sources-repo.js'
 
 const testUrl =
   process.env.TEST_DATABASE_URL ??
@@ -26,7 +26,12 @@ beforeAll(async () => {
   execSync('pnpm --filter @mwp/db migrate', { env, stdio: 'pipe' })
   execSync('pnpm --filter @mwp/db seed', { env, stdio: 'pipe' })
   vi.stubEnv('DATABASE_URL', testUrl)
-  categoryId = (await listCategories()).find((c) => c.slug === 'vitamin-d')!.id
+  // eigene Kategorie → isoliert von anderen Testdateien
+  const { rows } = await getPool().query(
+    `insert into vergleich.categories (slug, name)
+     values ('disc-test', 'Discovery-Test') returning id`,
+  )
+  categoryId = rows[0].id as string
 })
 
 afterAll(async () => {

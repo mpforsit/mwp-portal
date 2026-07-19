@@ -45,21 +45,121 @@ export const parseAttributes = (raw: string): ObservedAttribute[] => {
 // Baut den echten Extraktor auf Basis der Anthropic-API. Wirft, wenn kein
 // API-Key gesetzt ist (Extraktion ist dann deaktiviert).
 export const createExtractor = (): AttributeExtractor => {
-  if (!process.env.ANTHROPIC_API_KEY) {
-    throw new Error('ANTHROPIC_API_KEY ist nicht gesetzt — LLM-Extraktion deaktiviert.')
-  }
-  const client = new Anthropic()
+  const client = requireClient()
   return async (text: string): Promise<ObservedAttribute[]> => {
-    const res = await client.messages.create({
-      model: 'claude-opus-4-8',
-      max_tokens: 4096,
-      system: SYSTEM,
-      messages: [{ role: 'user', content: text }],
-    })
-    let joined = ''
-    for (const block of res.content) {
-      if (block.type === 'text') joined += block.text
-    }
+    const joined = await complete(client, SYSTEM, text)
     return parseAttributes(joined)
   }
+}
+
+// --- Schritt 7: gezielte Faktenextraktion gegen bestätigte Keys ----------
+
+export interface ExtractedField {
+  value: string // beobachteter Rohwert (Einheiten wie auf der Seite)
+  confidence: number // 0..1
+  snippet: string // Textbeleg (Provenienz)
+}
+
+export interface ExtractedFacts {
+  name: string | null
+  manufacturer: string | null
+  gtin: string | null
+  attributes: Record<string, ExtractedField>
+}
+
+export type FactExtractor = (
+  text: string,
+  keys: string[],
+) => Promise<ExtractedFacts>
+
+const factsSystem = (keys: string[]): string =>
+  `Extrahiere aus dem Text einer Produktseite NUR harte Fakten. Ziehe genau diese Attribute,
+falls vorhanden: ${keys.join(', ')}. Zusätzlich name, manufacturer, gtin.
+Werte wörtlich wie auf der Seite (inkl. Einheiten). Keine Wertung, kein Marketing, nichts erfinden.
+Für jedes gefundene Attribut: value (Rohwert), confidence (0..1), snippet (kurzer Textbeleg).
+Fehlt ein Attribut, lass es weg. Antworte ausschließlich als JSON:
+{"name":"","manufacturer":"","gtin":"","attributes":{"<key>":{"value":"","confidence":0.9,"snippet":""}}}`
+
+const clamp01 = (n: unknown): number => {
+  const v = typeof n === 'number' ? n : Number(n)
+  if (!Number.isFinite(v)) return 0
+  return Math.min(1, Math.max(0, v))
+}
+
+const strOrNull = (v: unknown): string | null =>
+  typeof v === 'string' && v.trim() ? v.trim() : null
+
+// Parst die Fakten-Antwort tolerant; behält nur erlaubte Keys.
+export const parseFacts = (raw: string, keys: string[]): ExtractedFacts => {
+  const allowed = new Set(keys)
+  const empty: ExtractedFacts = {
+    name: null,
+    manufacturer: null,
+    gtin: null,
+    attributes: {},
+  }
+  const text = raw.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim()
+  let data: unknown
+  try {
+    data = JSON.parse(text)
+  } catch {
+    return empty
+  }
+  const rec = data as Record<string, unknown>
+  const attributes: Record<string, ExtractedField> = {}
+  const rawAttrs = (rec.attributes ?? {}) as Record<string, unknown>
+  for (const [key, val] of Object.entries(rawAttrs)) {
+    if (!allowed.has(key)) continue
+    const field = val as Record<string, unknown>
+    const value = typeof field.value === 'string' ? field.value.trim() : ''
+    if (!value) continue
+    attributes[key] = {
+      value,
+      confidence: clamp01(field.confidence),
+      snippet: typeof field.snippet === 'string' ? field.snippet : '',
+    }
+  }
+  return {
+    name: strOrNull(rec.name),
+    manufacturer: strOrNull(rec.manufacturer),
+    gtin: strOrNull(rec.gtin),
+    attributes,
+  }
+}
+
+export const createFactExtractor = (): FactExtractor => {
+  const client = requireClient()
+  return async (text: string, keys: string[]): Promise<ExtractedFacts> => {
+    const joined = await complete(client, factsSystem(keys), text)
+    return parseFacts(joined, keys)
+  }
+}
+
+// --- gemeinsame API-Helfer ----------------------------------------------
+
+const requireClient = (): Anthropic => {
+  if (!process.env.ANTHROPIC_API_KEY) {
+    throw new Error(
+      'ANTHROPIC_API_KEY ist nicht gesetzt — LLM-Extraktion deaktiviert.',
+    )
+  }
+  return new Anthropic()
+}
+
+const complete = async (
+  client: Anthropic,
+  system: string,
+  content: string,
+): Promise<string> => {
+  const res = await client.messages.create({
+    model: 'claude-opus-4-8',
+    max_tokens: 4096,
+    system,
+    messages: [{ role: 'user', content }],
+  })
+  let joined = ''
+  for (const block of res.content) {
+    if (block.type === 'text') joined += block.text
+  }
+  return joined
 }

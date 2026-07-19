@@ -863,3 +863,30 @@ Lint grün, Build kompiliert. Vor LLM-Code claude-api-Referenz geladen
 bestätigten Attribut-Keys + deterministische Normalisierung (µg↔IE,
 Preis), Confidence/Provenienz, Draft in ingest.extractions. Dann Tor 2
 (Abnahme) + Promote nach vergleich.products (Schritt 8).
+
+## 2026-07-18 — Ingest-Pipeline Schritt 7: Gezielte Extraktion + Normalisierung
+
+**Was:** Faktenextraktion gegen die bestätigten Attribut-Keys (Tor 1).
+`llm.ts` um FactExtractor erweitert (createFactExtractor, parseFacts:
+nur erlaubte Keys, confidence auf 0..1 geclampt, name/manufacturer/gtin;
+gemeinsame API-Helfer requireClient/complete). `normalize.ts` (rein,
+getestet): parseNumber (de „1.234,56"/„9,90" + en), normalizeValue mit
+µg→IE (×40, Vitamin D) und Preis→Cent. `extractions-repo.ts` (upsert
+Draft je Quelle, on conflict → status zurück auf draft, promoted_
+product_id=null; listExtractions). `extraction.ts` (extractForCategory:
+je Quelle Fakten ziehen, deterministisch normalisieren, Confidence +
+Provenienz je Feld inkl. _source_url, Draft ablegen; wirft
+NoSelectedAttributesError ohne Tor-1-Auswahl). `admin-extractions.ts`
+(Extraktions-Trigger + Draft-Ansicht mit Normalisierung/Confidence).
+**Begründung:** LLM extrahiert nur Rohwerte; Umrechnung/Preis
+deterministisch im Code (kein Halluzinieren von Zahlen). Confidence +
+Textbeleg je Feld für die spätere Abnahme (Tor 2). Extraktor injizierbar
+→ Tests ohne Netz.
+**Verifikation:** 31 Tests grün (Normalisierung µg→IE/Preis→Cent/
+Zahlparser, parseFacts-Key-Filter+Clamp, Extraktions-Integration mit
+gemocktem Extraktor). Typecheck + Lint grün, Build kompiliert.
+Kategoriegebundene Aggregationstests nutzen jetzt eigene Kategorien
+(Isolation zwischen Testdateien).
+**Nächster Schritt:** Schritt 8 — Tor 2 (Abnahme) + Promote der Drafts
+nach vergleich.products (Dedup via gtin/url), KEIN Schreibzugriff auf
+product_evaluations (rote-Linie-Test). Dann Schritt 9 (Re-Run) und PR.
